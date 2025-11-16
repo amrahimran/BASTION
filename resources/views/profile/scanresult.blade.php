@@ -21,12 +21,12 @@
         </p>
     </div>
 
-    @foreach($targets as $target)
+    @foreach($results as $target => $data)
         @php
-            $targetPorts = collect($ports)->where('target', $target);
-            $lowCount = $targetPorts->where('risk', 'Low')->count();
-            $mediumCount = $targetPorts->where('risk', 'Medium')->count();
-            $highCount = $targetPorts->where('risk', 'High')->count();
+            $openPorts = $data['ports'];
+            $lowCount = collect($openPorts)->where('risk', 'Low')->count();
+            $mediumCount = collect($openPorts)->where('risk', 'Medium')->count();
+            $highCount = collect($openPorts)->where('risk', 'High')->count();
         @endphp
 
         <div class="max-w-4xl mx-auto mb-12">
@@ -61,15 +61,21 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach ($targetPorts as $p)
+                        @foreach ($openPorts as $p)
                             @php
-                                $colorClass = $p['risk'] == 'High' ? 'bg-red-600' : ($p['risk']=='Medium' ? 'bg-yellow-400' : 'bg-green-400');
+                                $colorClass = $p['risk'] == 'High'
+                                    ? 'bg-red-600'
+                                    : ($p['risk'] == 'Medium'
+                                        ? 'bg-yellow-400'
+                                        : 'bg-green-400');
                             @endphp
                             <tr class="border-b border-gray-700">
                                 <td class="p-3 font-semibold">{{ $p['port'] }}</td>
                                 <td class="p-3">{{ $p['service'] }}</td>
                                 <td class="p-3">
-                                    <span class="px-2 py-1 {{ $colorClass }} text-black rounded">{{ $p['risk'] }}</span>
+                                    <span class="px-2 py-1 {{ $colorClass }} text-black rounded">
+                                        {{ $p['risk'] }}
+                                    </span>
                                 </td>
                                 <td class="p-3 text-gray-300 text-sm">{{ $p['reason'] }}</td>
                             </tr>
@@ -84,7 +90,13 @@
     <!-- Raw Output -->
     <div class="max-w-4xl mx-auto bg-black/40 border border-[#00c3b3]/30 rounded-xl shadow-lg p-6 mb-10">
         <h2 class="text-lg font-semibold text-[#00c3b3] mb-2">Raw Nmap Output</h2>
-        <pre class="font-mono text-[#00ff9d] text-sm whitespace-pre-line overflow-auto">{{ $rawOutput }}</pre>
+
+        @foreach ($results as $target => $data)
+            <h3 class="text-[#00ff9d] font-bold mt-2">{{ $target }}</h3>
+            <pre class="font-mono text-[#00ff9d] text-sm whitespace-pre-line overflow-auto">
+{{ $data['raw'] }}
+            </pre>
+        @endforeach
     </div>
 
     <!-- Buttons -->

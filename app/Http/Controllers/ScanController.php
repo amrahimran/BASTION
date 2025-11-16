@@ -6,176 +6,178 @@ use Illuminate\Http\Request;
 
 class ScanController extends Controller
 {
+    public function showScanPage()
+    {
+        return view('scan');
+    }
+
     public function runScan(Request $request)
     {
         ini_set('max_execution_time', 0);
-
         $request->validate([
-            'target' => 'required_without:auto_detect|string|nullable',
+            'target' => 'nullable|string',
+            'scan_mode' => 'required|string',
         ]);
 
-        $autoDetect = $request->boolean('auto_detect');
-        $scanMode = $request->input('scan_mode', 'fast');
+        $autoDetect = $request->has('auto_detect');
+        $scanMode = $request->input('scan_mode');
+        $targets = [];
 
-        /*
-        |--------------------------------------------------------------------------
-        | AUTO-DETECT LOGIC
-        |--------------------------------------------------------------------------
-        | If user selects Auto Detect LAN, dynamically detect local subnet
-        | and scan all devices in it.
-        */
-
+        // ==============================
+        // 1. BUILD TARGET LIST
+        // ==============================
         if ($autoDetect) {
-            // 1. Detect local IP dynamically
-            $localIp = trim(shell_exec("ipconfig | findstr /R /C:\"IPv4\"")) ?: '192.168.1.10';
-            if (preg_match('/(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})/', $localIp, $matches)) {
-                $localIp = $matches[1];
-
-                // Assume /24 subnet if real mask detection fails
-                $subnet = preg_replace('/\d+$/', '0', $localIp) . '/24';
-            } else {
-                $subnet = '192.168.1.0/24';
-            }
-
-            // 2. Nmap ping scan to detect live hosts
-            $discoverCmd = '"C:\\Program Files (x86)\\Nmap\\nmap.exe" -sn ' . escapeshellcmd($subnet);
-            $discoverOutput = shell_exec($discoverCmd);
-
-            // 3. Extract live hosts
-            preg_match_all('/Nmap scan report for ([0-9.]+)/', $discoverOutput, $detected);
-            $targets = $detected[1] ?? [];
-
-            // Fallback if no hosts detected
+            $localIp = getHostByName(getHostName());
+            $subnet = implode('.', array_slice(explode('.', $localIp), 0, 3)) . ".0/24";
+            $pingCmd = "\"C:\\Program Files (x86)\\Nmap\\nmap.exe\" -sn $subnet";
+            $pingOutput = shell_exec($pingCmd);
+            preg_match_all('/Nmap scan report for ([0-9.]+)/', $pingOutput, $aliveHosts);
+            $targets = $aliveHosts[1] ?? [];
             if (empty($targets)) {
-                $targets = [$subnet];
+                $targets = [$localIp];
             }
-
         } else {
-            $targets = [$request->input('target')];
+            $targets[] = $request->input('target');
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | MAIN PORT SCAN LOGIC
-        |--------------------------------------------------------------------------
-        */
+        // ==============================
+        // 2. SCAN OPTIONS
+        // ==============================
+        $options = $scanMode === 'fast' ? "-F -Pn" : "-p- -sV -A -Pn";
+        $nmap = "\"C:\\Program Files (x86)\\Nmap\\nmap.exe\"";
 
-        $ports = [];
-        $rawOutputs = [];
+        $parsedPorts = [];
+        $rawOutput = [];
 
+        // ==============================
+        // 3. DEFINE RISK EXPLANATIONS
+        // ==============================
+        $riskMessages = [
+            'High' => [
+                'ports' => [
+                    21 => 'FTP (21) can expose credentials in plain text.',
+                    23 => 'Telnet (23) is unencrypted and easily exploited.',
+                    445 => 'SMB (445) is often targeted for ransomware attacks.',
+                    3306 => 'MySQL (3306) exposes databases if misconfigured.'
+                ],
+                'features' => [],
+                'default' => 'This service is critical and highly vulnerable.'
+            ],
+            'Medium' => [
+                'ports' => [
+                    80 => 'HTTP (80) may leak server info if misconfigured.',
+                    443 => 'HTTPS (443) misconfigurations can expose sensitive info.',
+                    135 => 'RPC (135) can be exploited for internal attacks.'
+                ],
+                'features' => [
+                    'ssh_weak_config' => 'SSH weak config may allow password brute-force attacks.',
+                    'ftp_anonymous' => 'Anonymous FTP allows anyone to read/write files.',
+                    'http_headers' => 'HTTP headers may reveal server or software info.',
+                    'snmp_scan' => 'SNMP info may disclose network devices and configs.',
+                    'docker' => 'Exposed Docker service may allow container hijacking.',
+                    'firewall' => 'Firewall misconfigurations may allow access to restricted ports.',
+                    'passive_sniff' => 'Network sniffing may expose sensitive traffic.',
+                    'dns_misconfig' => 'DNS misconfigurations may leak internal network info.'
+                ],
+                'default' => 'This service may expose information depending on configuration.'
+            ],
+            'Low' => [
+                'ports' => [],
+                'features' => [],
+                'default' => 'This service is generally safe but should be monitored.'
+            ]
+        ];
+
+        // ==============================
+        // 4. SCAN EACH TARGET
+        // ==============================
         foreach ($targets as $target) {
-
-            $options = ($scanMode === 'fast|| $autoDetect') 
-                ? '-F'                  // fast scan
-                : '-p- -sV -A';         // deep scan
-
-            $command = '"C:\\Program Files (x86)\\Nmap\\nmap.exe" ' . $options . ' ' . escapeshellcmd($target);
-
+            $command = "$nmap $options " . escapeshellcmd($target);
             $output = shell_exec($command);
-            $rawOutputs[$target] = $output;
 
             if (!$output) {
-                $rawOutputs[$target] = "Nmap could not run for {$target}. Make sure it is installed.";
+                $rawOutput[$target] = "Host offline or blocked.";
                 continue;
             }
 
-            $lines = explode("\n", $output);
+            $rawOutput[$target] = $output;
 
-            foreach ($lines as $line) {
-                if (preg_match('/^(\d+)\/tcp\s+open\s+(\S+)/', trim($line), $matches)) {
+            // Parse open ports
+            preg_match_all('/(\d+)\/tcp\s+open\s+([a-zA-Z0-9\-]+)/', $output, $matches, PREG_SET_ORDER);
+            foreach ($matches as $m) {
+                $port = (int)$m[1];
+                $service = $m[2];
 
-                    $port = intval($matches[1]);
-                    $service = $matches[2];
+                if (isset($riskMessages['High']['ports'][$port])) {
+                    $risk = 'High';
+                    $reason = $riskMessages['High']['ports'][$port];
+                } elseif (isset($riskMessages['Medium']['ports'][$port])) {
+                    $risk = 'Medium';
+                    $reason = $riskMessages['Medium']['ports'][$port];
+                } else {
+                    $risk = 'Low';
+                    $reason = $riskMessages['Low']['default'];
+                }
 
-                    // Get risk level + reason
-                    [$risk, $reason] = $this->getPortRisk($port);
+                $parsedPorts[] = [
+                    'target' => $target,
+                    'port' => $port,
+                    'service' => $service,
+                    'risk' => $risk,
+                    'reason' => $reason
+                ];
+            }
 
-                    $ports[] = [
-                        "target"  => $target,
-                        "port"    => $port,
-                        "service" => $service,
-                        "risk"    => $risk,
-                        "reason"  => $reason
+            // Feature-based checks
+            foreach ($request->input('features', []) as $feature) {
+                if (isset($riskMessages['High']['features'][$feature])) {
+                    $parsedPorts[] = [
+                        'target' => $target,
+                        'port' => null,
+                        'service' => $feature,
+                        'risk' => 'High',
+                        'reason' => $riskMessages['High']['features'][$feature]
+                    ];
+                } elseif (isset($riskMessages['Medium']['features'][$feature])) {
+                    $parsedPorts[] = [
+                        'target' => $target,
+                        'port' => null,
+                        'service' => $feature,
+                        'risk' => 'Medium',
+                        'reason' => $riskMessages['Medium']['features'][$feature]
+                    ];
+                } else {
+                    $parsedPorts[] = [
+                        'target' => $target,
+                        'port' => null,
+                        'service' => $feature,
+                        'risk' => 'Low',
+                        'reason' => $riskMessages['Low']['default']
                     ];
                 }
             }
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | RISK COUNTS
-        |--------------------------------------------------------------------------
-        */
+        // ==============================
+        // 5. BUILD RESULTS ARRAY FOR BLADE
+        // ==============================
+        $results = [];
+        foreach ($targets as $target) {
+            $portsForTarget = array_filter($parsedPorts, fn($p) => $p['target'] === $target);
 
-        $low = collect($ports)->where('risk', 'Low')->count();
-        $medium = collect($ports)->where('risk', 'Medium')->count();
-        $high = collect($ports)->where('risk', 'High')->count();
-
-        /*
-        |--------------------------------------------------------------------------
-        | RETURN TO VIEW
-        |--------------------------------------------------------------------------
-        */
-
-        return view('profile.scanresult', [
-            'targets' => $targets,
-            'ports'   => $ports,
-            'low'     => $low,
-            'medium'  => $medium,
-            'high'    => $high,
-            'scanMode' => $scanMode,
-            'autoDetect' => $autoDetect,
-            'rawOutput' => $rawOutputs,
-        ]);
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | HELPER: PORT RISK LOGIC
-    |--------------------------------------------------------------------------
-    */
-
-    private function getPortRisk($port)
-    {
-        $risk   = "Low";
-        $reason = "This service is generally safe and rarely targeted.";
-
-        switch ($port) {
-
-            // WEB PORTS
-            case 80:
-            case 443:
-                return ["Medium", "Web server ports: commonly targeted for SQL injection, XSS, and brute force attacks."];
-
-            // SSH / FTP
-            case 22:
-                return ["Medium", "SSH remote access: secure, but commonly brute‑forced when exposed publicly."];
-            case 21:
-                return ["Medium", "FTP: uses plain text logins; attackers can sniff or brute‑force credentials."];
-
-            // DATABASES
-            case 3306:
-                return ["High", "MySQL exposed: attackers may attempt database intrusion or data theft."];
-            case 5432:
-                return ["High", "PostgreSQL exposed: unauthorized access attempts possible."];
-
-            // WINDOWS SERVICES
-            case 135:
-            case 139:
-            case 445:
-                return ["High", "Windows SMB / RPC ports: widely exploited by ransomware (e.g., WannaCry)."];
-
-            // RDP
-            case 3389:
-                return ["High", "Remote Desktop exposed: vulnerable to brute‑force attacks and exploits."];
-
-            // DEV PORTS
-            case 8000:
-            case 8080:
-            case 5000:
-                return ["Medium", "Development server port: should not be exposed in production."];
+            $results[$target] = [
+                'ports' => $portsForTarget,
+                'raw' => $rawOutput[$target] ?? "No raw output available."
+            ];
         }
 
-        return [$risk, $reason];
+        return view('profile.scanresult', [
+            'scanMode' => $scanMode,
+            'autoDetect' => $autoDetect,
+            'targets' => $targets,
+            'ports' => $parsedPorts,
+            'rawOutput' => $rawOutput,
+            'results' => $results
+        ]);
     }
 }
