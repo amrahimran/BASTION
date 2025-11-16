@@ -19,8 +19,9 @@
         </p>
 
         <div class="flex flex-col sm:flex-row gap-4">
-            <a href="#" class="bg-[#00c3b3] text-black font-semibold px-6 py-3 rounded-lg hover:bg-[#00a79e] transition">
-                Run a Free Scan
+            <a href="{{ route('scan') }}" 
+                class="bg-[#00c3b3] text-black font-semibold px-6 py-3 rounded-lg hover:bg-[#00a79e] transition">
+                    Run a Free Scan
             </a>
             <a href="#" class="border border-[#00c3b3] text-[#00c3b3] font-semibold px-6 py-3 rounded-lg hover:bg-[#00c3b3] hover:text-black transition">
                 Request a Demo
