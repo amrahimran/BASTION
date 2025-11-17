@@ -3,17 +3,20 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Models\Scan;
+use Illuminate\Support\Facades\Auth;
 
 class ScanController extends Controller
 {
     public function showScanPage()
     {
-        return view('scan');
+        return view('profile.scan');
     }
 
     public function runScan(Request $request)
     {
         ini_set('max_execution_time', 0);
+
         $request->validate([
             'target' => 'nullable|string',
             'scan_mode' => 'required|string',
@@ -23,16 +26,17 @@ class ScanController extends Controller
         $scanMode = $request->input('scan_mode');
         $targets = [];
 
-        // ==============================
-        // 1. BUILD TARGET LIST
-        // ==============================
+        // 1. TARGET DETECTION
         if ($autoDetect) {
             $localIp = getHostByName(getHostName());
             $subnet = implode('.', array_slice(explode('.', $localIp), 0, 3)) . ".0/24";
+
             $pingCmd = "\"C:\\Program Files (x86)\\Nmap\\nmap.exe\" -sn $subnet";
             $pingOutput = shell_exec($pingCmd);
-            preg_match_all('/Nmap scan report for ([0-9.]+)/', $pingOutput, $aliveHosts);
-            $targets = $aliveHosts[1] ?? [];
+
+            preg_match_all('/Nmap scan report for ([0-9.]+)/', $pingOutput, $alive);
+            $targets = $alive[1] ?? [];
+
             if (empty($targets)) {
                 $targets = [$localIp];
             }
@@ -40,72 +44,56 @@ class ScanController extends Controller
             $targets[] = $request->input('target');
         }
 
-        // ==============================
         // 2. SCAN OPTIONS
-        // ==============================
         $options = $scanMode === 'fast' ? "-F -Pn" : "-p- -sV -A -Pn";
         $nmap = "\"C:\\Program Files (x86)\\Nmap\\nmap.exe\"";
 
-        $parsedPorts = [];
-        $rawOutput = [];
+        $results = [];
 
-        // ==============================
-        // 3. DEFINE RISK EXPLANATIONS
-        // ==============================
+        // 3. RISK DEFINITIONS
         $riskMessages = [
             'High' => [
                 'ports' => [
-                    21 => 'FTP (21) can expose credentials in plain text.',
-                    23 => 'Telnet (23) is unencrypted and easily exploited.',
-                    445 => 'SMB (445) is often targeted for ransomware attacks.',
-                    3306 => 'MySQL (3306) exposes databases if misconfigured.'
+                    21 => 'FTP (21) exposes plain-text credentials.',
+                    23 => 'Telnet (23) is unencrypted and unsafe.',
+                    445 => 'SMB (445) is a known ransomware target.',
+                    3306 => 'MySQL (3306) exposes databases.',
                 ],
-                'features' => [],
-                'default' => 'This service is critical and highly vulnerable.'
+                'default' => 'This service is highly vulnerable.'
             ],
             'Medium' => [
                 'ports' => [
-                    80 => 'HTTP (80) may leak server info if misconfigured.',
-                    443 => 'HTTPS (443) misconfigurations can expose sensitive info.',
-                    135 => 'RPC (135) can be exploited for internal attacks.'
+                    80 => 'HTTP (80) may leak server info.',
+                    443 => 'HTTPS (443) misconfigurations can expose data.',
+                    135 => 'RPC (135) can be abused internally.',
                 ],
-                'features' => [
-                    'ssh_weak_config' => 'SSH weak config may allow password brute-force attacks.',
-                    'ftp_anonymous' => 'Anonymous FTP allows anyone to read/write files.',
-                    'http_headers' => 'HTTP headers may reveal server or software info.',
-                    'snmp_scan' => 'SNMP info may disclose network devices and configs.',
-                    'docker' => 'Exposed Docker service may allow container hijacking.',
-                    'firewall' => 'Firewall misconfigurations may allow access to restricted ports.',
-                    'passive_sniff' => 'Network sniffing may expose sensitive traffic.',
-                    'dns_misconfig' => 'DNS misconfigurations may leak internal network info.'
-                ],
-                'default' => 'This service may expose information depending on configuration.'
+                'default' => 'Service may expose information depending on config.'
             ],
             'Low' => [
-                'ports' => [],
-                'features' => [],
-                'default' => 'This service is generally safe but should be monitored.'
+                'default' => 'Generally safe but still monitor regularly.'
             ]
         ];
 
-        // ==============================
-        // 4. SCAN EACH TARGET
-        // ==============================
+        // 4. SCAN LOOP
         foreach ($targets as $target) {
-            $command = "$nmap $options " . escapeshellcmd($target);
-            $output = shell_exec($command);
+            $parsedPortsForThisTarget = [];
+
+            $cmd = "$nmap $options " . escapeshellcmd($target);
+            $output = shell_exec($cmd);
 
             if (!$output) {
-                $rawOutput[$target] = "Host offline or blocked.";
+                $results[$target] = [
+                    'ports' => [],
+                    'raw' => "Host offline or blocked."
+                ];
                 continue;
             }
 
-            $rawOutput[$target] = $output;
-
-            // Parse open ports
+            // PARSE PORTS
             preg_match_all('/(\d+)\/tcp\s+open\s+([a-zA-Z0-9\-]+)/', $output, $matches, PREG_SET_ORDER);
+
             foreach ($matches as $m) {
-                $port = (int)$m[1];
+                $port = intval($m[1]);
                 $service = $m[2];
 
                 if (isset($riskMessages['High']['ports'][$port])) {
@@ -119,8 +107,7 @@ class ScanController extends Controller
                     $reason = $riskMessages['Low']['default'];
                 }
 
-                $parsedPorts[] = [
-                    'target' => $target,
+                $parsedPortsForThisTarget[] = [
                     'port' => $port,
                     'service' => $service,
                     'risk' => $risk,
@@ -128,46 +115,21 @@ class ScanController extends Controller
                 ];
             }
 
-            // Feature-based checks
-            foreach ($request->input('features', []) as $feature) {
-                if (isset($riskMessages['High']['features'][$feature])) {
-                    $parsedPorts[] = [
-                        'target' => $target,
-                        'port' => null,
-                        'service' => $feature,
-                        'risk' => 'High',
-                        'reason' => $riskMessages['High']['features'][$feature]
-                    ];
-                } elseif (isset($riskMessages['Medium']['features'][$feature])) {
-                    $parsedPorts[] = [
-                        'target' => $target,
-                        'port' => null,
-                        'service' => $feature,
-                        'risk' => 'Medium',
-                        'reason' => $riskMessages['Medium']['features'][$feature]
-                    ];
-                } else {
-                    $parsedPorts[] = [
-                        'target' => $target,
-                        'port' => null,
-                        'service' => $feature,
-                        'risk' => 'Low',
-                        'reason' => $riskMessages['Low']['default']
-                    ];
-                }
-            }
-        }
+            // SAVE TO DATABASE
+            Scan::create([
+                'user_id' => Auth::id(),
+                'target' => $target,
+                'scan_mode' => $scanMode,
+                'auto_detect' => $autoDetect,
+                'features' => $request->input('features', []),
+                'ports' => $parsedPortsForThisTarget, // ✅ store parsed table
+                'raw_output' => $output,
+            ]);
 
-        // ==============================
-        // 5. BUILD RESULTS ARRAY FOR BLADE
-        // ==============================
-        $results = [];
-        foreach ($targets as $target) {
-            $portsForTarget = array_filter($parsedPorts, fn($p) => $p['target'] === $target);
-
+            // ADD TO RESULTS ARRAY
             $results[$target] = [
-                'ports' => $portsForTarget,
-                'raw' => $rawOutput[$target] ?? "No raw output available."
+                'ports' => $parsedPortsForThisTarget,
+                'raw' => $output
             ];
         }
 
@@ -175,9 +137,47 @@ class ScanController extends Controller
             'scanMode' => $scanMode,
             'autoDetect' => $autoDetect,
             'targets' => $targets,
-            'ports' => $parsedPorts,
-            'rawOutput' => $rawOutput,
-            'results' => $results
+            'results' => $results,
         ]);
     }
+
+    // 5. REPORTS PAGE
+    public function reports()
+    {
+        $scans = Scan::where('user_id', Auth::id())
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return view('profile.scanreports', compact('scans'));
+    }
+
+    // 6. EXPORT CSV
+        public function exportSingleCsv(Scan $scan)
+        {
+            $filename = "scan_report_{$scan->id}_" . now()->format('Ymd_His') . ".csv";
+            $headers = [
+                "Content-Type" => "text/csv",
+                "Content-Disposition" => "attachment; filename=$filename"
+            ];
+
+            $callback = function() use($scan) {
+                $file = fopen('php://output', 'w');
+
+                fputcsv($file, ['Port','Service','Risk','Reason']);
+                $ports = $scan->ports ?? [];
+                foreach ($ports as $p) {
+                    fputcsv($file, [
+                        $p['port'] ?? '',
+                        $p['service'] ?? '',
+                        $p['risk'] ?? '',
+                        $p['reason'] ?? '',
+                    ]);
+                }
+
+                fclose($file);
+            };
+
+            return response()->stream($callback, 200, $headers);
+        }
+
 }

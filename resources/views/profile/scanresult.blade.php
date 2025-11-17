@@ -21,9 +21,11 @@
         </p>
     </div>
 
+    <!-- LOOP THROUGH TARGETS -->
     @foreach($results as $target => $data)
+
         @php
-            $openPorts = $data['ports'];
+            $openPorts = $data['ports'] ?? [];
             $lowCount = collect($openPorts)->where('risk', 'Low')->count();
             $mediumCount = collect($openPorts)->where('risk', 'Medium')->count();
             $highCount = collect($openPorts)->where('risk', 'High')->count();
@@ -49,52 +51,58 @@
                 </div>
             </div>
 
-            <!-- Detailed Findings -->
+            <!-- ===== PARSED OUTPUT TABLE ===== -->
             <div class="bg-black/40 border border-[#00c3b3]/30 rounded-xl shadow-lg p-6 mb-6 overflow-x-auto">
-                <table class="w-full border-collapse">
-                    <thead class="text-left border-b border-gray-500">
-                        <tr>
-                            <th class="p-3">Port</th>
-                            <th class="p-3">Service</th>
-                            <th class="p-3">Risk Level</th>
-                            <th class="p-3">Explanation</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach ($openPorts as $p)
-                            @php
-                                $colorClass = $p['risk'] == 'High'
-                                    ? 'bg-red-600'
-                                    : ($p['risk'] == 'Medium'
-                                        ? 'bg-yellow-400'
-                                        : 'bg-green-400');
-                            @endphp
-                            <tr class="border-b border-gray-700">
-                                <td class="p-3 font-semibold">{{ $p['port'] }}</td>
-                                <td class="p-3">{{ $p['service'] }}</td>
-                                <td class="p-3">
-                                    <span class="px-2 py-1 {{ $colorClass }} text-black rounded">
-                                        {{ $p['risk'] }}
-                                    </span>
-                                </td>
-                                <td class="p-3 text-gray-300 text-sm">{{ $p['reason'] }}</td>
+                <h3 class="text-lg font-semibold mb-4 text-[#00ff9d]">Parsed Results</h3>
+
+                @if(!empty($openPorts))
+                    <table class="w-full border-collapse">
+                        <thead class="text-left border-b border-gray-500">
+                            <tr>
+                                <th class="p-3">Port</th>
+                                <th class="p-3">Service</th>
+                                <th class="p-3">Risk Level</th>
+                                <th class="p-3">Explanation</th>
                             </tr>
-                        @endforeach
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            @foreach ($openPorts as $p)
+                                <tr class="border-b border-gray-700">
+                                    <td class="p-3 font-semibold">{{ $p['port'] ?? '-' }}</td>
+                                    <td class="p-3">{{ $p['service'] ?? '-' }}</td>
+                                    <td class="p-3">
+                                        @php
+                                            $colorClass = match($p['risk'] ?? '') {
+                                                'High' => 'bg-red-600',
+                                                'Medium' => 'bg-yellow-400',
+                                                default => 'bg-green-400',
+                                            };
+                                        @endphp
+                                        <span class="px-2 py-1 {{ $colorClass }} text-black rounded">
+                                            {{ $p['risk'] ?? '-' }}
+                                        </span>
+                                    </td>
+                                    <td class="p-3 text-gray-300 text-sm">{{ $p['reason'] ?? '-' }}</td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                @else
+                    <p class="text-gray-400 text-sm">No open ports detected.</p>
+                @endif
             </div>
 
         </div>
     @endforeach
 
-    <!-- Raw Output -->
+    <!-- ===== RAW OUTPUT ===== -->
     <div class="max-w-4xl mx-auto bg-black/40 border border-[#00c3b3]/30 rounded-xl shadow-lg p-6 mb-10">
         <h2 class="text-lg font-semibold text-[#00c3b3] mb-2">Raw Nmap Output</h2>
 
         @foreach ($results as $target => $data)
-            <h3 class="text-[#00ff9d] font-bold mt-2">{{ $target }}</h3>
-            <pre class="font-mono text-[#00ff9d] text-sm whitespace-pre-line overflow-auto">
-{{ $data['raw'] }}
+            <h3 class="text-[#00ff9d] font-bold mt-4">{{ $target }}</h3>
+            <pre class="font-mono text-[#00ff9d] text-sm whitespace-pre-line overflow-auto bg-black/30 p-4 rounded-lg">
+{{ $data['raw'] ?? 'No raw output available.' }}
             </pre>
         @endforeach
     </div>

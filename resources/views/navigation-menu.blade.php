@@ -18,27 +18,43 @@
                         </x-nav-link>
                     </div>
 
+                    @if(Auth::check() && Auth::user()->role === 'admin')
                     <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
                         <x-nav-link href="{{ route('scan') }}" :active="request()->routeIs('scan')">
                             {{ __('Scanning') }}
                         </x-nav-link>
                     </div>
+                    @endif
 
+                    @if(Auth::check() && Auth::user()->role === 'admin')
                     <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
                         <x-nav-link href="{{ route('dashboard') }}" :active="request()->routeIs('dashboard')">
                             {{ __('Simulation') }}
                         </x-nav-link>
                     </div>
+                    @endif
+    
+                    <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
+                        <x-nav-link href="{{ route('scan.reports') }}" :active="request()->routeIs('scanreports')">
+                            {{ __('Scan Reports') }}
+                        </x-nav-link>
+                    </div>
 
                     <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
                         <x-nav-link href="{{ route('dashboard') }}" :active="request()->routeIs('dashboard')">
-                            {{ __('Pricing') }}
+                            {{ __('Simulation Reports') }}
                         </x-nav-link>
                     </div>
 
                     <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
                         <x-nav-link href="{{ route('dashboard') }}" :active="request()->routeIs('dashboard')">
                             {{ __('FAQ') }}
+                        </x-nav-link>
+                    </div>
+
+                    <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
+                        <x-nav-link href="{{ route('dashboard') }}" :active="request()->routeIs('dashboard')">
+                            {{ __('Pricing') }}
                         </x-nav-link>
                     </div>
                 </div>

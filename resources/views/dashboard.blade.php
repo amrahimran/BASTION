@@ -19,10 +19,12 @@
         </p>
 
         <div class="flex flex-col sm:flex-row gap-4">
+            @if(Auth::check() && Auth::user()->role === 'admin')
             <a href="{{ route('scan') }}" 
                 class="bg-[#00c3b3] text-black font-semibold px-6 py-3 rounded-lg hover:bg-[#00a79e] transition">
                     Run a Free Scan
             </a>
+            @endif
             <a href="#" class="border border-[#00c3b3] text-[#00c3b3] font-semibold px-6 py-3 rounded-lg hover:bg-[#00c3b3] hover:text-black transition">
                 Request a Demo
             </a>
@@ -41,7 +43,26 @@
     </div>
 </section>
 
+     <!-- ADMIN ONLY user management. -->
+    @if(Auth::check() && Auth::user()->role === 'admin')
+            <section class="mt-12 bg-[#102635] border border-[#00c3b3]/30 p-6 rounded-xl shadow-lg">
+                <h2 class="text-2xl font-bold text-[#00c3b3] mb-4">Admin: User Management</h2>
+                <p class="text-gray-300 mb-6">Manage all registered users: add, update, or remove accounts.</p>
 
+                <div class="flex flex-wrap gap-4">
+                    <a href="{{ route('admin.users.index') }}"
+                    class="bg-[#00c3b3] text-black font-semibold px-6 py-3 rounded-lg hover:bg-[#00a79e] transition">
+                        View / Edit Users
+                    </a>
+
+                    <a href="{{ route('admin.users.create') }}"
+                    class="border border-[#00c3b3] text-[#00c3b3] font-semibold px-6 py-3 rounded-lg 
+                            hover:bg-[#00c3b3] hover:text-black transition">
+                        Add New User
+                    </a>
+                </div>
+            </section>
+        @endif
 
     <!-- Features Section -->
     <section class="max-w-6xl mx-auto mt-16 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 text-center">
