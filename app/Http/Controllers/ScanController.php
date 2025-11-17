@@ -142,14 +142,22 @@ class ScanController extends Controller
     }
 
     // 5. REPORTS PAGE
+    // public function reports()
+    // {
+    //     $scans = Scan::where('user_id', Auth::id())
+    //         ->orderBy('created_at', 'desc')
+    //         ->get();
+
+    //     return view('profile.scanreports', compact('scans'));
+    // }
+
     public function reports()
     {
-        $scans = Scan::where('user_id', Auth::id())
-            ->orderBy('created_at', 'desc')
-            ->get();
+        $scans = Scan::orderBy('created_at', 'desc')->get();
 
         return view('profile.scanreports', compact('scans'));
     }
+
 
     // 6. EXPORT CSV
         public function exportSingleCsv(Scan $scan)
