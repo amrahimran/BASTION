@@ -25,14 +25,14 @@
                 @csrf
 
                 <div>
-                    <x-label for="email" value="{{ __('Email') }}" class="text-gray-300" />
+                    <x-label for="email" value="{{ __('Email') }}" class="text-white" />
                     <x-input id="email" 
                              class="block mt-1 w-full bg-[#07141d] border border-[#00c3b3]/40 text-white focus:border-[#00c3b3] focus:ring-[#00c3b3]" 
                              type="email" name="email" :value="old('email')" required autofocus autocomplete="username" />
                 </div>
 
                 <div class="mt-4">
-                    <x-label for="password" value="{{ __('Password') }}" class="text-gray-300" />
+                    <x-label for="password" value="{{ __('Password') }}" class="text-white" />
                     <x-input id="password" 
                              class="block mt-1 w-full bg-[#07141d] border border-[#00c3b3]/40 text-white focus:border-[#00c3b3] focus:ring-[#00c3b3]" 
                              type="password" name="password" required autocomplete="current-password" />

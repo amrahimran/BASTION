@@ -41,8 +41,16 @@ class FortifyServiceProvider extends ServiceProvider
             return Limit::perMinute(5)->by($throttleKey);
         });
 
-        RateLimiter::for('two-factor', function (Request $request) {
-            return Limit::perMinute(5)->by($request->session()->get('login.id'));
+        RateLimiter::for('login', function (Request $request) {
+            $email = (string) $request->email;
+
+            return Limit::perMinute(2) // allow only 3 attempts per minute
+                ->by($email.$request->ip())
+                ->response(function () {
+                    return back()->withErrors([
+                        'email' => 'Too many failed login attempts. Please wait 60s before trying again.',
+                    ]);
+                });
         });
     }
 }

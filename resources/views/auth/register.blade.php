@@ -19,7 +19,7 @@
                 @csrf
 
                 <div class="mb-4">
-                    <x-label for="name" value="{{ __('Name') }}" class="text-gray-300" />
+                    <x-label for="name" value="{{ __('Name') }}" class="text-white" />
                     <x-input id="name"
                              class="block mt-1 w-full bg-[#07141d] border border-[#00c3b3]/40 text-white
                                     focus:border-[#00c3b3] focus:ring-[#00c3b3]"
@@ -32,7 +32,7 @@
                 </div>
 
                 <div class="mb-4">
-                    <x-label for="email" value="{{ __('Email') }}" class="text-gray-300" />
+                    <x-label for="email" value="{{ __('Email') }}" class="text-white" />
                     <x-input id="email"
                              class="block mt-1 w-full bg-[#07141d] border border-[#00c3b3]/40 text-white
                                     focus:border-[#00c3b3] focus:ring-[#00c3b3]"
@@ -44,7 +44,7 @@
                 </div>
 
                 <div class="mb-4">
-                    <x-label for="password" value="{{ __('Password') }}" class="text-gray-300" />
+                    <x-label for="password" value="{{ __('Password') }}" class="text-white" />
                     <x-input id="password"
                              class="block mt-1 w-full bg-[#07141d] border border-[#00c3b3]/40 text-white
                                     focus:border-[#00c3b3] focus:ring-[#00c3b3]"
@@ -55,7 +55,7 @@
                 </div>
 
                 <div class="mb-4">
-                    <x-label for="password_confirmation" value="{{ __('Confirm Password') }}" class="text-gray-300" />
+                    <x-label for="password_confirmation" value="{{ __('Confirm Password') }}" class="text-white" />
                     <x-input id="password_confirmation"
                              class="block mt-1 w-full bg-[#07141d] border border-[#00c3b3]/40 text-white
                                     focus:border-[#00c3b3] focus:ring-[#00c3b3]"
