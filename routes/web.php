@@ -17,10 +17,6 @@ Route::middleware([
     })->name('dashboard');
 });
 
-// Route::get('/scan', function () {
-//     return view('profile.scan');
-// })->name('scan');
-
 Route::post('/scan/run', [ScanController::class, 'runScan'])->name('scan.run');
 
 Route::get('/scan/auto-detect', [ScanController::class, 'autoDetect'])->name('scan.autodetect');
@@ -36,10 +32,6 @@ Route::middleware(['auth'])->prefix('admin')->group(function () {
     Route::delete('/users/{id}', [AdminUserController::class, 'destroy'])->name('admin.users.destroy');
 });
 
-// Route::get('/scan', [ScanController::class, 'showScanPage'])->name('scan');
-// Route::post('/scan/run', [ScanController::class, 'runScan'])->name('scan.run');
-// Route::get('/scan/reports', [ScanController::class, 'reports'])->name('scan.reports');
-// Route::get('/scan/export/csv', [ScanController::class, 'exportCsv'])->name('scan.export.csv');
 
 Route::get('/scan', [ScanController::class, 'showScanPage'])->name('scan');
 Route::post('/scan/run', [ScanController::class, 'runScan'])->name('scan.run');
@@ -47,3 +39,9 @@ Route::get('/scan/reports', [ScanController::class, 'reports'])->name('scan.repo
 Route::get('/scan/export/csv', [ScanController::class, 'exportCsv'])->name('scan.export.csv');
 
 Route::get('/scan/{scan}/export', [ScanController::class, 'exportSingleCsv'])->name('scan.export.single');
+
+Route::get('/scan/export/csv', [ScanController::class, 'exportCsv'])->name('scan.export.csv');
+
+Route::get('/scan/result/{id}', [ScanController::class, 'showScanResult'])->name('scan.result');
+Route::get('/scan/export/{id}', [ScanController::class, 'exportSingleCsv'])->name('scan.export.single.csv');
+

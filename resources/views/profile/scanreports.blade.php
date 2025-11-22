@@ -15,71 +15,97 @@
             </a>
         </div>
 
-        @foreach($scans as $scan)
+        @forelse($scans as $scan)
             @php
-                $ports = $scan->ports ?? [];
+                $results = $scan->parsed_results_detailed;
             @endphp
 
             <div class="p-6 mb-6 border border-gray-700 rounded-xl bg-gradient-to-r from-[#102635] to-[#0d1f2b] shadow-lg">
-                <div class="flex justify-between items-center mb-2">
-                    <!-- Target Header -->
-                    <h3 class="text-[#00c3b3] font-bold text-lg">{{ $scan->target }} ({{ ucfirst($scan->scan_mode) }})</h3>
 
-                    <!-- Export CSV for this scan -->
-                    <a href="{{ route('scan.export.single', $scan->id) }}"
-                       class="bg-[#00c3b3] text-black px-3 py-1 rounded hover:bg-[#00a79e] text-sm transition">
+                <div class="flex justify-between items-center mb-2">
+                    <h3 class="text-[#00c3b3] font-bold text-lg">
+                        Scan #{{ $scan->id }} - {{ $scan->target ?? 'Auto-detected' }}
+                        ({{ ucfirst($scan->scan_mode) }})
+                    </h3>
+                    <a href="{{ route('scan.export.single.csv', $scan->id) }}"
+                       class="bg-[#00c3b3] text-black px-3 py-1 rounded hover:bg-[#00a79e] transition text-sm">
                        Export CSV
                     </a>
                 </div>
 
-                <p class="text-gray-400 text-sm mb-4">Run at: {{ $scan->created_at }}</p>
-
-                <!-- Parsed Results -->
-                <h4 class="text-white font-semibold mb-2">Parsed Results:</h4>
-                @if(count($ports) > 0)
-                    <div class="overflow-x-auto">
-                        <table class="w-full border-collapse text-sm">
-                            <thead class="bg-[#0f2a3a]">
-                                <tr>
-                                    <th class="p-2 text-left text-[#00c3b3]">Port</th>
-                                    <th class="p-2 text-left text-[#00c3b3]">Service</th>
-                                    <th class="p-2 text-left text-[#00c3b3]">Risk</th>
-                                    <th class="p-2 text-left text-[#00c3b3]">Reason</th>
+                <p class="text-gray-400 text-sm mb-2">Run at: {{ $scan->created_at }}</p>
+                <p class="text-gray-400 text-sm mb-4">Features: {{ implode(', ', $scan->features ?? []) }}</p>
+{{-- 
+                <!-- Hosts Table -->
+                @if(isset($results['hosts']) && count($results['hosts']) > 0)
+                    <h4 class="text-gray-200 font-semibold mt-2">Discovered Hosts:</h4>
+                    <table class="w-full border-collapse text-sm mb-4">
+                        <thead class="bg-[#0f2a3a]">
+                            <tr>
+                                <th class="p-2 text-left text-[#00c3b3]">IP</th>
+                                <th class="p-2 text-left text-[#00c3b3]">MAC</th>
+                                <th class="p-2 text-left text-[#00c3b3]">Vendor</th>
+                                <th class="p-2 text-left text-[#00c3b3]">Risk</th>
+                                <th class="p-2 text-left text-[#00c3b3]">Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($results['hosts'] as $host)
+                                <tr class="border-b border-gray-700 hover:bg-gray-800">
+                                    <td class="p-2 text-white">{{ $host['ip'] }}</td>
+                                    <td class="p-2 text-white">{{ $host['mac'] }}</td>
+                                    <td class="p-2 text-white">{{ $host['vendor'] }}</td>
+                                    <td class="p-2 font-bold {{ $host['risk_level']=='High'?'text-red-500':($host['risk_level']=='Medium'?'text-yellow-400':'text-green-400') }}">
+                                        {{ $host['risk_level'] }}
+                                    </td>
+                                    <td class="p-2 text-gray-300">{{ $host['description'] }}</td>
                                 </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($ports as $p)
-                                    @php
-                                        $riskColor = match($p['risk'] ?? '') {
-                                            'High' => 'bg-red-600 text-white',
-                                            'Medium' => 'bg-yellow-400 text-black',
-                                            'Low' => 'bg-green-400 text-black',
-                                            default => 'bg-gray-500 text-white',
-                                        };
-                                    @endphp
-                                    <tr class="border-b border-gray-700 hover:bg-gray-800">
-                                        <td class="p-2 font-semibold text-white">{{ $p['port'] ?? '-' }}</td>
-                                        <td class="p-2 text-white">{{ $p['service'] ?? '-' }}</td>
-                                        <td class="p-2">
-                                            <span class="px-2 py-1 rounded {{ $riskColor }}">
-                                                {{ $p['risk'] ?? '-' }}
-                                            </span>
-                                        </td>
-                                        <td class="p-2 text-gray-300 text-sm">{{ $p['reason'] ?? '-' }}</td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-                @else
-                    <p class="text-gray-400 text-sm mb-2">No parsed results available.</p>
+                            @endforeach
+                        </tbody>
+                    </table>
                 @endif
 
+                <!-- Ports Table -->
+                @if(isset($results['ports']) && count($results['ports']) > 0)
+                    <h4 class="text-gray-200 font-semibold mt-2">Open Ports:</h4>
+                    <table class="w-full border-collapse text-sm mb-4">
+                        <thead class="bg-[#0f2a3a]">
+                            <tr>
+                                <th class="p-2 text-left text-[#00c3b3]">Port</th>
+                                <th class="p-2 text-left text-[#00c3b3]">Service</th>
+                                <th class="p-2 text-left text-[#00c3b3]">State</th>
+                                <th class="p-2 text-left text-[#00c3b3]">Risk</th>
+                                <th class="p-2 text-left text-[#00c3b3]">Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($results['ports'] as $port)
+                                <tr class="border-b border-gray-700 hover:bg-gray-800">
+                                    <td class="p-2 text-white">{{ $port['port'] }}</td>
+                                    <td class="p-2 text-white">{{ $port['service'] }}</td>
+                                    <td class="p-2 text-white">{{ $port['state'] }}</td>
+                                    <td class="p-2 font-bold {{ $port['risk_level']=='High'?'text-red-500':($port['risk_level']=='Medium'?'text-yellow-400':'text-green-400') }}">
+                                        {{ $port['risk_level'] }}
+                                    </td>
+                                    <td class="p-2 text-gray-300">{{ $port['description'] }}</td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                @else
+                    <p class="text-gray-400 text-sm">No open ports detected.</p>
+                @endif --}}
+
                 <!-- Raw Output -->
-                <h4 class="text-white font-semibold mt-4 mb-2">Raw Output:</h4>
-                <pre class="text-xs text-[#00ff9d] bg-black/40 p-3 rounded overflow-x-auto">{{ $scan->raw_output ?? 'No raw output available.' }}</pre>
+                <h4 class="text-gray-200 font-semibold mt-3">Raw Output:</h4>
+                <pre class="text-xs text-[#00ff9d] whitespace-pre-wrap bg-black/40 p-3 rounded overflow-x-auto">
+{{ $scan->raw_output ?? 'No raw output available.' }}
+                </pre>
+
             </div>
-        @endforeach
+        @empty
+            <p class="text-center text-gray-400">No scans available yet.</p>
+        @endforelse
 
     </div>
 </x-app-layout>

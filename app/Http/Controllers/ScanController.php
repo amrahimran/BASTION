@@ -3,189 +3,357 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\Scan;
 use Illuminate\Support\Facades\Auth;
+use App\Models\Scan;
+use Illuminate\Support\Facades\Response;
 
 class ScanController extends Controller
 {
     public function showScanPage()
     {
-        return view('profile.scan');
+        $user = Auth::user();
+
+        if (!$user || $user->role !== 'admin') {
+            abort(403, 'Unauthorized access');
+        }
+
+        // Full list of scan features
+        $featuresList = [
+            'nmap_host_discovery' => [
+                'label' => 'Nmap Host Discovery',
+                'desc'  => 'Detects which devices are alive on the network.'
+            ],
+            'nmap_basic_port_scan' => [
+                'label' => 'Basic Port Scan',
+                'desc'  => 'Scans common open ports that attackers target.'
+            ],
+            'os_fingerprinting' => [
+                'label' => 'OS Fingerprinting',
+                'desc'  => 'Tries to identify the operating system version.'
+            ],
+            'banner_grabbing' => [
+                'label' => 'Banner Grabbing',
+                'desc'  => 'Collects service banners that may reveal versions.'
+            ],
+            'ssh_weak_config' => [
+                'label' => 'Weak SSH Configuration Check',
+                'desc'  => 'Detects weak algorithms or outdated SSH settings.'
+            ],
+            'ftp_anonymous' => [
+                'label' => 'FTP Anonymous Login',
+                'desc'  => 'Checks if FTP allows login without credentials.'
+            ],
+            'smb_share_scan' => [
+                'label' => 'SMB Share Scan',
+                'desc'  => 'Finds open Windows shares that expose files.'
+            ],
+            'http_headers' => [
+                'label' => 'HTTP Security Headers',
+                'desc'  => 'Checks if a website is missing security headers.'
+            ],
+            'snmp_scan' => [
+                'label' => 'SNMP v1/v2 Public Scan',
+                'desc'  => 'Searches for devices with default public SNMP.'
+            ],
+            'nmap_nse' => [
+                'label' => 'Nmap NSE Scripts',
+                'desc'  => 'Runs vulnerability scripts for deeper checks.'
+            ],
+            'nikto' => [
+                'label' => 'Nikto Web Scan (Simulated)',
+                'desc'  => 'Detects common web server misconfigurations.'
+            ],
+            'ssl_tls' => [
+                'label' => 'SSL/TLS Scan',
+                'desc'  => 'Checks SSL versions, ciphers, and weaknesses.'
+            ],
+            'os_patch' => [
+                'label' => 'OS Patch Check',
+                'desc'  => 'Simulates outdated OS or missing patch issues.'
+            ],
+            'docker' => [
+                'label' => 'Docker Misconfigurations',
+                'desc'  => 'Checks for exposed Docker sockets/weak setups.'
+            ],
+            'firewall' => [
+                'label' => 'Firewall Status',
+                'desc'  => 'Tests whether firewall rules are active.'
+            ],
+            'passive_sniff' => [
+                'label' => 'Passive Network Sniffing',
+                'desc'  => 'Detects unencrypted or exposed network traffic.'
+            ],
+            'dns_misconfig' => [
+                'label' => 'DNS Misconfiguration Check',
+                'desc'  => 'Finds common DNS issues like open resolvers.'
+            ],
+        ];
+
+        return view('profile.scan', compact('featuresList'));
     }
+
 
     public function runScan(Request $request)
     {
-        ini_set('max_execution_time', 0);
+        set_time_limit(300); // 5 minutes
 
-        $request->validate([
-            'target' => 'nullable|string',
-            'scan_mode' => 'required|string',
-        ]);
-
-        $autoDetect = $request->has('auto_detect');
-        $scanMode = $request->input('scan_mode');
-        $targets = [];
-
-        // 1. TARGET DETECTION
-        if ($autoDetect) {
-            $localIp = getHostByName(getHostName());
-            $subnet = implode('.', array_slice(explode('.', $localIp), 0, 3)) . ".0/24";
-
-            $pingCmd = "\"C:\\Program Files (x86)\\Nmap\\nmap.exe\" -sn $subnet";
-            $pingOutput = shell_exec($pingCmd);
-
-            preg_match_all('/Nmap scan report for ([0-9.]+)/', $pingOutput, $alive);
-            $targets = $alive[1] ?? [];
-
-            if (empty($targets)) {
-                $targets = [$localIp];
-            }
-        } else {
-            $targets[] = $request->input('target');
+        // Validation: Auto detection MUST be enabled
+        if (!$request->has('auto_detect') || !$request->boolean('auto_detect')) {
+            return redirect()
+                ->back()
+                ->with('error', 'Auto Detect LAN Devices must be enabled before running a scan.');
         }
 
-        // 2. SCAN OPTIONS
-        $options = $scanMode === 'fast' ? "-F -Pn" : "-p- -sV -A -Pn";
-        $nmap = "\"C:\\Program Files (x86)\\Nmap\\nmap.exe\"";
+        $user = Auth::user();
+        if (!$user) {
+            abort(403, 'Unauthorized');
+        }
 
-        $results = [];
+        $autoDetect = true;
+        $scanMode = $request->scan_mode ?? 'fast';
+        $features = $request->features ?? [];
 
-        // 3. RISK DEFINITIONS
-        $riskMessages = [
-            'High' => [
-                'ports' => [
-                    21 => 'FTP (21) exposes plain-text credentials.',
-                    23 => 'Telnet (23) is unencrypted and unsafe.',
-                    445 => 'SMB (445) is a known ransomware target.',
-                    3306 => 'MySQL (3306) exposes databases.',
-                ],
-                'default' => 'This service is highly vulnerable.'
-            ],
-            'Medium' => [
-                'ports' => [
-                    80 => 'HTTP (80) may leak server info.',
-                    443 => 'HTTPS (443) misconfigurations can expose data.',
-                    135 => 'RPC (135) can be abused internally.',
-                ],
-                'default' => 'Service may expose information depending on config.'
-            ],
-            'Low' => [
-                'default' => 'Generally safe but still monitor regularly.'
-            ]
-        ];
+        $parsedResults = [];
+        $rawOutput = "";
 
-        // 4. SCAN LOOP
-        foreach ($targets as $target) {
-            $parsedPortsForThisTarget = [];
+        // Target host (can be made dynamic via request)
+        $host = "127.0.0.1";
 
-            $cmd = "$nmap $options " . escapeshellcmd($target);
+        // Helper function to run Python script
+        $runPythonScript = function($scriptPath) use ($host) {
+            $cmd = "python \"$scriptPath\" $host 2>&1";
             $output = shell_exec($cmd);
 
             if (!$output) {
-                $results[$target] = [
-                    'ports' => [],
-                    'raw' => "Host offline or blocked."
-                ];
-                continue;
+                return [[], "No output from script"];
             }
 
-            // PARSE PORTS
-            preg_match_all('/(\d+)\/tcp\s+open\s+([a-zA-Z0-9\-]+)/', $output, $matches, PREG_SET_ORDER);
-
-            foreach ($matches as $m) {
-                $port = intval($m[1]);
-                $service = $m[2];
-
-                if (isset($riskMessages['High']['ports'][$port])) {
-                    $risk = 'High';
-                    $reason = $riskMessages['High']['ports'][$port];
-                } elseif (isset($riskMessages['Medium']['ports'][$port])) {
-                    $risk = 'Medium';
-                    $reason = $riskMessages['Medium']['ports'][$port];
-                } else {
-                    $risk = 'Low';
-                    $reason = $riskMessages['Low']['default'];
-                }
-
-                $parsedPortsForThisTarget[] = [
-                    'port' => $port,
-                    'service' => $service,
-                    'risk' => $risk,
-                    'reason' => $reason
-                ];
+            $decoded = json_decode($output, true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                return [[], "Invalid JSON output:\n$output"];
             }
 
-            // SAVE TO DATABASE
-            Scan::create([
-                'user_id' => Auth::id(),
-                'target' => $target,
-                'scan_mode' => $scanMode,
-                'auto_detect' => $autoDetect,
-                'features' => $request->input('features', []),
-                'ports' => $parsedPortsForThisTarget, // ✅ store parsed table
-                'raw_output' => $output,
-            ]);
+            return [$decoded, $output];
+        };
 
-            // ADD TO RESULTS ARRAY
-            $results[$target] = [
-                'ports' => $parsedPortsForThisTarget,
-                'raw' => $output
-            ];
+        // Run host discovery
+        if (in_array('nmap_host_discovery', $features)) {
+            $script = base_path("python_scripts/NMapHostDiscovery.py");
+            [$result, $output] = $runPythonScript($script);
+            $rawOutput .= "\n\n=== Host Discovery ===\n" . $output;
+            $parsedResults['hosts'] = $result['hosts'] ?? [];
         }
 
-        return view('profile.scanresult', [
-            'scanMode' => $scanMode,
-            'autoDetect' => $autoDetect,
-            'targets' => $targets,
-            'results' => $results,
+        // Run port scan
+        if (in_array('nmap_basic_port_scan', $features)) {
+            $script = $scanMode === 'fast'
+                ? base_path("python_scripts/basic_port_fast.py")
+                : base_path("python_scripts/basic_port_deep.py");
+
+            [$result, $output] = $runPythonScript($script);
+            $rawOutput .= "\n\n=== Port Scan ({$scanMode}) ===\n" . $output;
+            $parsedResults['ports'] = $result['ports'] ?? [];
+        }
+
+        // Save scan to database
+        $scan = Scan::create([
+            'user_id' => $user->id,
+            'target' => $host,
+            'scan_mode' => $scanMode,
+            'auto_detect' => $autoDetect,
+            'features' => $features,
+            'parsed_results' => $parsedResults,
+            'raw_output' => $rawOutput,
         ]);
+
+        //return redirect()->route('scan.reports')->with('success', "Scan #{$scan->id} completed!");
+        return redirect()->route('scan.result', $scan->id)->with('success', "Scan #{$scan->id} completed!");
+
     }
 
-    // 5. REPORTS PAGE
-    // public function reports()
-    // {
-    //     $scans = Scan::where('user_id', Auth::id())
-    //         ->orderBy('created_at', 'desc')
-    //         ->get();
+    public function showScanResult($id)
+    {
+        $scan = Scan::findOrFail($id);
+        $scan->parsed_results = json_decode($scan->parsed_results, true) ?? [];
 
-    //     return view('profile.scanreports', compact('scans'));
-    // }
+        // Add detailed parsed results with risk and descriptions
+        $scan->parsed_results_detailed = $this->parseScanResults($scan);
 
-    public function reports()
+        return view('profile.scanresult', compact('scan'));
+    }
+
+
+
+    public function exportCsv()
     {
         $scans = Scan::orderBy('created_at', 'desc')->get();
+
+        $filename = "scan_reports_" . date('Y-m-d_H-i-s') . ".csv";
+
+        $headers = [
+            "Content-Type" => "text/csv",
+            "Content-Disposition" => "attachment; filename=\"$filename\"",
+        ];
+
+        $callback = function() use ($scans) {
+            $file = fopen('php://output', 'w');
+
+            fputcsv($file, [
+                'ID',
+                'User ID',
+                'Target',
+                'Scan Mode',
+                'Features',
+                'Parsed Ports',
+                'Raw Output',
+                'Created At'
+            ]);
+
+            foreach ($scans as $scan) {
+                fputcsv($file, [
+                    $scan->id,
+                    $scan->user_id,
+                    $scan->target,
+                    $scan->scan_mode,
+                    implode(", ", $scan->features ?? []),
+                    json_encode($scan->parsed_results),
+                    $scan->raw_output,
+                    $scan->created_at,
+                ]);
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    public function parseScanResults($scan)
+{
+    $results = [];
+
+    // Hosts
+    if(!empty($scan->parsed_results['hosts'])){
+        foreach($scan->parsed_results['hosts'] as $host){
+            $results['hosts'][] = [
+                'ip' => $host['ip'] ?? '-',
+                'mac' => $host['mac'] ?? '-',
+                'vendor' => $host['vendor'] ?? '-',
+                'risk_level' => 'Low', // Usually discovery is low risk
+                'description' => 'Device found on network. Could be your computer, router, or IoT device.'
+            ];
+        }
+    }
+
+    // Ports
+    if(!empty($scan->parsed_results['ports'])){
+        foreach($scan->parsed_results['ports'] as $port){
+            $risk = 'Low';
+            $desc = 'Port is open, standard service running.';
+
+            // Assign risk levels based on port/service
+            if(in_array($port['port'], [21, 22, 23])){ // FTP, SSH, Telnet
+                $risk = 'Medium';
+                $desc = 'Open administrative port. Check if password-protected.';
+            }
+            if(in_array($port['port'], [3389, 5900])){ // RDP, VNC
+                $risk = 'High';
+                $desc = 'Remote access port open. Exposed to external attacks.';
+            }
+
+            $results['ports'][] = [
+                'port' => $port['port'] ?? '-',
+                'service' => $port['service'] ?? '-',
+                'state' => $port['state'] ?? '-',
+                'risk_level' => $risk,
+                'description' => $desc
+            ];
+        }
+    }
+
+    return $results;
+}
+     public function reports()
+    {
+        $scans = Scan::orderBy('created_at', 'desc')->get();
+
+        // Parse results for each scan before sending to view
+        foreach ($scans as $scan) {
+            // Assuming parsedScanResults returns ['hosts'=>[], 'ports'=>[]] with risk_level & description
+            $scan->parsed_results_detailed = $this->parseScanResults($scan);
+        }
 
         return view('profile.scanreports', compact('scans'));
     }
 
 
-    // 6. EXPORT CSV
-        public function exportSingleCsv(Scan $scan)
-        {
-            $filename = "scan_report_{$scan->id}_" . now()->format('Ymd_His') . ".csv";
-            $headers = [
-                "Content-Type" => "text/csv",
-                "Content-Disposition" => "attachment; filename=$filename"
-            ];
 
-            $callback = function() use($scan) {
-                $file = fopen('php://output', 'w');
+    public function exportSingleCsv($id)
+    {
+        $scan = Scan::findOrFail($id);
 
-                fputcsv($file, ['Port','Service','Risk','Reason']);
-                $ports = $scan->ports ?? [];
-                foreach ($ports as $p) {
+        // Set CSV headers for download
+        $headers = [
+            "Content-Type" => "text/csv",
+            "Content-Disposition" => "attachment; filename=scan_{$scan->id}.csv",
+        ];
+
+        $callback = function () use ($scan) {
+            $file = fopen('php://output', 'w');
+
+            // Write Scan Summary
+            fputcsv($file, ['Scan ID', 'Target', 'Scan Mode', 'Features', 'Run At']);
+            fputcsv($file, [
+                $scan->id,
+                $scan->target ?? 'Auto-detected',
+                ucfirst($scan->scan_mode),
+                implode(', ', $scan->features ?? []),
+                $scan->created_at,
+            ]);
+
+            fputcsv($file, []); // blank line
+
+            // Write Hosts
+            if (!empty($scan->parsed_results['hosts'])) {
+                fputcsv($file, ['Hosts']);
+                fputcsv($file, ['IP Address', 'MAC', 'Vendor']);
+                foreach ($scan->parsed_results['hosts'] as $host) {
                     fputcsv($file, [
-                        $p['port'] ?? '',
-                        $p['service'] ?? '',
-                        $p['risk'] ?? '',
-                        $p['reason'] ?? '',
+                        $host['ip'] ?? '-',
+                        $host['mac'] ?? '-',
+                        $host['vendor'] ?? '-',
                     ]);
                 }
+                fputcsv($file, []); // blank line
+            }
 
-                fclose($file);
-            };
+            // Write Ports
+            if (!empty($scan->parsed_results['ports'])) {
+                fputcsv($file, ['Open Ports']);
+                fputcsv($file, ['Port', 'Service', 'Version', 'State']);
+                foreach ($scan->parsed_results['ports'] as $port) {
+                    fputcsv($file, [
+                        $port['port'] ?? '-',
+                        $port['service'] ?? '-',
+                        $port['version'] ?? '-',
+                        $port['state'] ?? '-',
+                    ]);
+                }
+                fputcsv($file, []); // blank line
+            }
 
-            return response()->stream($callback, 200, $headers);
-        }
+            // Raw output
+            fputcsv($file, ['Raw Output']);
+            $rawLines = explode("\n", $scan->raw_output ?? 'No raw output available.');
+            foreach ($rawLines as $line) {
+                fputcsv($file, [$line]);
+            }
+
+            fclose($file);
+        };
+
+        return Response::stream($callback, 200, $headers);
+    }
+
 
 }

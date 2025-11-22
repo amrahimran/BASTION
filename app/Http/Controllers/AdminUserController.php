@@ -23,9 +23,13 @@ class AdminUserController extends Controller
     {
         $request->validate([
             'name' => 'required',
-            'email' => 'required|email|unique:users',
+            'email' => 'required|email:dns|unique:users,email',
             'password' => 'required|min:6',
             'role' => 'required'
+        ], [
+            'email.unique' => 'This email is already registered. Please use a different email address.',
+            'email.email' => 'Please enter a valid email address.',
+            'email.email.dns' => 'The email domain is not valid. Please use a real domain (e.g., gmail.com).'
         ]);
 
         User::create([
@@ -37,6 +41,7 @@ class AdminUserController extends Controller
 
         return redirect()->route('admin.users.index')->with('success', 'User created successfully!');
     }
+
 
     public function edit($id)
     {
