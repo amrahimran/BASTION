@@ -45,3 +45,5 @@ Route::get('/scan/export/csv', [ScanController::class, 'exportCsv'])->name('scan
 Route::get('/scan/result/{id}', [ScanController::class, 'showScanResult'])->name('scan.result');
 Route::get('/scan/export/{id}', [ScanController::class, 'exportSingleCsv'])->name('scan.export.single.csv');
 
+Route::get('/scans/{id}/pdf', [ScanController::class, 'exportSinglePdf'])->name('scans.export.pdf');
+Route::get('/scans/pdf/all', [ScanController::class, 'exportAllPdf'])->name('scans.export.pdf.all');

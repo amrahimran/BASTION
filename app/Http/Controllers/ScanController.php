@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Scan;
 use Illuminate\Support\Facades\Response;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class ScanController extends Controller
 {
@@ -182,52 +183,6 @@ class ScanController extends Controller
         return view('profile.scanresult', compact('scan'));
     }
 
-
-
-    public function exportCsv()
-    {
-        $scans = Scan::orderBy('created_at', 'desc')->get();
-
-        $filename = "scan_reports_" . date('Y-m-d_H-i-s') . ".csv";
-
-        $headers = [
-            "Content-Type" => "text/csv",
-            "Content-Disposition" => "attachment; filename=\"$filename\"",
-        ];
-
-        $callback = function() use ($scans) {
-            $file = fopen('php://output', 'w');
-
-            fputcsv($file, [
-                'ID',
-                'User ID',
-                'Target',
-                'Scan Mode',
-                'Features',
-                'Parsed Ports',
-                'Raw Output',
-                'Created At'
-            ]);
-
-            foreach ($scans as $scan) {
-                fputcsv($file, [
-                    $scan->id,
-                    $scan->user_id,
-                    $scan->target,
-                    $scan->scan_mode,
-                    implode(", ", $scan->features ?? []),
-                    json_encode($scan->parsed_results),
-                    $scan->raw_output,
-                    $scan->created_at,
-                ]);
-            }
-
-            fclose($file);
-        };
-
-        return response()->stream($callback, 200, $headers);
-    }
-
     public function parseScanResults($scan)
 {
     $results = [];
@@ -286,74 +241,26 @@ class ScanController extends Controller
         return view('profile.scanreports', compact('scans'));
     }
 
-
-
-    public function exportSingleCsv($id)
+    public function exportSinglePdf($id)
     {
         $scan = Scan::findOrFail($id);
 
-        // Set CSV headers for download
-        $headers = [
-            "Content-Type" => "text/csv",
-            "Content-Disposition" => "attachment; filename=scan_{$scan->id}.csv",
-        ];
+        $pdf = Pdf::loadView('reports.scan_single', compact('scan'))
+                ->setPaper('A4', 'portrait');
 
-        $callback = function () use ($scan) {
-            $file = fopen('php://output', 'w');
-
-            // Write Scan Summary
-            fputcsv($file, ['Scan ID', 'Target', 'Scan Mode', 'Features', 'Run At']);
-            fputcsv($file, [
-                $scan->id,
-                $scan->target ?? 'Auto-detected',
-                ucfirst($scan->scan_mode),
-                implode(', ', $scan->features ?? []),
-                $scan->created_at,
-            ]);
-
-            fputcsv($file, []); // blank line
-
-            // Write Hosts
-            if (!empty($scan->parsed_results['hosts'])) {
-                fputcsv($file, ['Hosts']);
-                fputcsv($file, ['IP Address', 'MAC', 'Vendor']);
-                foreach ($scan->parsed_results['hosts'] as $host) {
-                    fputcsv($file, [
-                        $host['ip'] ?? '-',
-                        $host['mac'] ?? '-',
-                        $host['vendor'] ?? '-',
-                    ]);
-                }
-                fputcsv($file, []); // blank line
-            }
-
-            // Write Ports
-            if (!empty($scan->parsed_results['ports'])) {
-                fputcsv($file, ['Open Ports']);
-                fputcsv($file, ['Port', 'Service', 'Version', 'State']);
-                foreach ($scan->parsed_results['ports'] as $port) {
-                    fputcsv($file, [
-                        $port['port'] ?? '-',
-                        $port['service'] ?? '-',
-                        $port['version'] ?? '-',
-                        $port['state'] ?? '-',
-                    ]);
-                }
-                fputcsv($file, []); // blank line
-            }
-
-            // Raw output
-            fputcsv($file, ['Raw Output']);
-            $rawLines = explode("\n", $scan->raw_output ?? 'No raw output available.');
-            foreach ($rawLines as $line) {
-                fputcsv($file, [$line]);
-            }
-
-            fclose($file);
-        };
-
-        return Response::stream($callback, 200, $headers);
+        return $pdf->download("scan_report_{$scan->id}.pdf");
     }
+
+    public function exportAllPdf()
+    {
+        $scans = Scan::orderBy('created_at', 'desc')->get();
+
+        $pdf = Pdf::loadView('reports.all_scans', compact('scans'))
+                ->setPaper('A4', 'landscape');
+
+        return $pdf->download("all_scan_reports.pdf");
+    }
+
 
 
 }

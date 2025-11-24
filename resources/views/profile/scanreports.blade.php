@@ -9,9 +9,9 @@
 
         <div class="max-w-5xl mx-auto mb-8 flex justify-between items-center">
             <h1 class="text-3xl font-bold text-white">Previous Scan Reports</h1>
-            <a href="{{ route('scan.export.csv') }}"
+            <a href="{{ route('scans.export.pdf.all') }}"
                class="bg-[#00c3b3] text-black px-4 py-2 rounded hover:bg-[#00a79e] transition">
-               Export All CSV
+               Export All PDF
             </a>
         </div>
 
@@ -27,9 +27,9 @@
                         Scan #{{ $scan->id }} - {{ $scan->target ?? 'Auto-detected' }}
                         ({{ ucfirst($scan->scan_mode) }})
                     </h3>
-                    <a href="{{ route('scan.export.single.csv', $scan->id) }}"
+                    <a href="{{ route('scans.export.pdf', $scan->id) }}"
                        class="bg-[#00c3b3] text-black px-3 py-1 rounded hover:bg-[#00a79e] transition text-sm">
-                       Export CSV
+                       Export PDF
                     </a>
                 </div>
 
