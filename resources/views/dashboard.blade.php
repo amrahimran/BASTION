@@ -25,9 +25,9 @@
                     Run a Free Scan
             </a>
             @endif
-            <a href="#" class="border border-[#00c3b3] text-[#00c3b3] font-semibold px-6 py-3 rounded-lg hover:bg-[#00c3b3] hover:text-black transition">
+            {{-- <a href="#" class="border border-[#00c3b3] text-[#00c3b3] font-semibold px-6 py-3 rounded-lg hover:bg-[#00c3b3] hover:text-black transition">
                 Request a Demo
-            </a>
+            </a> --}}
         </div>
 
         <div class="mt-8">

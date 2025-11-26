@@ -48,14 +48,6 @@ class ScanController extends Controller
                 'label' => 'SMB Share Scan',
                 'desc'  => 'Finds open Windows shares that expose files.'
             ],
-            'http_headers' => [
-                'label' => 'HTTP Security Headers',
-                'desc'  => 'Checks if a website is missing security headers.'
-            ],
-            'snmp_scan' => [
-                'label' => 'SNMP v1/v2 Public Scan',
-                'desc'  => 'Searches for devices with default public SNMP.'
-            ],
             'nmap_nse' => [
                 'label' => 'Nmap NSE Scripts',
                 'desc'  => 'Runs vulnerability scripts for deeper checks.'
@@ -67,10 +59,6 @@ class ScanController extends Controller
             'ssl_tls' => [
                 'label' => 'SSL/TLS Scan',
                 'desc'  => 'Checks SSL versions, ciphers, and weaknesses.'
-            ],
-            'os_patch' => [
-                'label' => 'OS Patch Check',
-                'desc'  => 'Simulates outdated OS or missing patch issues.'
             ],
             'docker' => [
                 'label' => 'Docker Misconfigurations',
@@ -155,6 +143,165 @@ class ScanController extends Controller
             $rawOutput .= "\n\n=== Port Scan ({$scanMode}) ===\n" . $output;
             $parsedResults['ports'] = $result['ports'] ?? [];
         }
+
+        // SMB Share Scan
+        if (in_array('smb_share_scan', $features)) {
+            $script = base_path("python_scripts/SMBShareScan.py");
+
+            [$result, $output] = $runPythonScript($script);
+            $rawOutput .= "\n\n=== SMB Share Scan ===\n" . $output;
+            
+            // Store result in a separate key, not 'ports'
+            $parsedResults['smb_shares'] = $result['shares'] ?? [];
+        }
+
+         //OS Fingerprinting
+        if (in_array('os_fingerprinting', $features)) {
+            $script = base_path("python_scripts/OSFingerPrinting.py");
+
+            [$result, $output] = $runPythonScript($script);
+            $rawOutput .= "\n\n=== OS Fingerprinting ===\n" . $output;
+            
+            // Store result in a separate key, not 'ports'
+            $parsedResults['os_fingerprinting'] = $result['hosts'] ?? [];
+        }
+
+         //FTP Anonymous Login
+        if (in_array('ftp_anonymous', $features)) {
+            $script = base_path("python_scripts/FTPChecker.py");
+
+            [$result, $output] = $runPythonScript($script);
+            $rawOutput .= "\n\n=== FTP Anonymous Login Checker ===\n" . $output;
+            
+            // Store result in a separate key, not 'ports'
+            $parsedResults['ftp_anonymous'] = $result['ftp'] ?? [];
+        }
+
+        //SSH weak config check
+        
+        if (in_array('ssh_weak_config', $features)) {
+        
+            $script = base_path("python_scripts/SSHChecker.py");
+            [$result, $output] = $runPythonScript($script);
+            $rawOutput .= "\n\n=== SSH Weak Configuration Checker ===\n" . $output;
+            
+            // Store result in a proper SSH key
+            $parsedResults['ssh_weak_config'] = $result['ssh'] ?? [];
+        }
+
+        //NMap NSE Scan
+        if (in_array('nmap_nse', $features)) {
+        
+            $script = base_path("python_scripts/NmapNseScanner.py");
+            [$result, $output] = $runPythonScript($script);
+            $rawOutput .= "\n\n=== Nmap NSE Scan ===\n" . $output;
+            
+            $parsedResults['nmap_nse'] = $result['nmap'] ?? [];
+        }
+
+        //Banner Grabbing
+        if (in_array('banner_grabbing', $features)) {
+    
+            $script = base_path("python_scripts/BannerGrabber.py");
+            [$result, $output] = $runPythonScript($script);
+            $rawOutput .= "\n\n=== Banner Grabbing ===\n" . $output;
+            $parsedResults['banner_grabbing'] = $result['banner'] ?? [];
+        }
+
+        
+        //Nikto Web Scan (Simulated)
+        if (in_array('nikto', $features)) {
+
+            $script = base_path("python_scripts/Nikto.py");
+
+            [$result, $output] = $runPythonScript($script);
+
+            $rawOutput .= "\n\n=== Nikto Web Scan (Simulated) ===\n" . $output;
+
+            // Save JSON results
+            $parsedResults['nikto'] = $result['nikto'] ?? [];
+        }
+
+        //SSL/TLS SCAN
+        if (in_array('ssl_tls', $features)) {
+
+            $script = base_path("python_scripts/SslTls.py");
+
+            [$result, $output] = $runPythonScript($script);
+
+            $rawOutput .= "\n\n=== SSL/TLS SCAN ===\n" . $output;
+
+            // Save JSON results
+            $parsedResults['ssl_tls'] = $result['sslscan'] ?? [];
+        }
+
+        // Docker Misconfigurations Checker
+        if (in_array('docker', $features)) {
+
+            $script = base_path("python_scripts/DockerMisconfigChecker.py");
+
+            [$result, $output] = $runPythonScript($script);
+            $rawOutput .= "\n\n=== Docker Misconfigurations ===\n" . $output;
+
+        
+            $parsedResults['docker'] = $result['docker'] ?? [];
+        }
+
+        //Firewall Status
+        if (in_array('firewall', $features)) {
+
+            $script = base_path("python_scripts/FirewallCheck.py");
+
+            [$result, $output] = $runPythonScript($script);
+            $rawOutput .= "\n\n=== Firewall Status ===\n" . $output;
+
+        
+            $parsedResults['firewall'] = $result['firewall'] ?? [];
+        }
+
+        // //Passive Network Sniffing
+        // if (in_array('passive_sniffing', $features)) {
+
+        //     $script = base_path("python_scripts/passiveSniffer.py");
+
+        //     [$result, $output] = $runPythonScript($script);
+        //     $rawOutput .= "\n\n=== Passive Network Sniffing ===\n" . $output;
+
+        
+        //     $parsedResults['passive_sniffing'] = $result['passive_sniffing'] ?? [];
+        // }
+
+        // Passive Network Sniffing
+        if (in_array('passive_sniffing', $features)) {
+            $script = base_path("python_scripts/passiveSniffer.py");
+            $timeout = 15; // seconds
+            [$result, $output] = $runPythonScript("$script $timeout");
+
+            $rawOutput .= "\n\n=== Passive Network Sniffing ===\n" . $output;
+
+            $parsedResults['passive_sniffing'] = $result['passive_sniffing'] ?? [
+                'error' => 'No data captured or permission denied.'
+            ];
+        }
+
+        //DNS Misconfiguration Check
+
+        if (in_array('dns_misconfig', $features)) {
+
+            $script = base_path("python_scripts/DNSMisconfig.py");
+
+            [$result, $output] = $runPythonScript($script);
+            $rawOutput .= "\n\n=== DNS Misconfiguration Check ===\n" . $output;
+
+        
+            $parsedResults['dns_misconfig'] = $result['dns'] ?? [];
+        }
+
+
+        
+
+
+    
 
         // Save scan to database
         $scan = Scan::create([

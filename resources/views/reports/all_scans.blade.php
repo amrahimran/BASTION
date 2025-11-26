@@ -19,7 +19,8 @@
     <thead>
         <tr>
             <th>ID</th>
-            <th>User</th>
+            <th>User Name</th>
+            <th>User Email</th>
             <th>Target</th>
             <th>Mode</th>
             <th>Features</th>
@@ -30,7 +31,8 @@
         @foreach($scans as $scan)
             <tr>
                 <td>{{ $scan->id }}</td>
-                <td>{{ $scan->user_id }}</td>
+                <td>{{ $scan->user->name ?? 'Unknown User' }}</td>
+                <td>{{ $scan->user->email ?? '-' }}</td>
                 <td>{{ $scan->target }}</td>
                 <td>{{ $scan->scan_mode }}</td>
                 <td>{{ implode(', ', $scan->features ?? []) }}</td>

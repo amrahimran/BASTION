@@ -34,6 +34,10 @@
                 </div>
 
                 <p class="text-gray-400 text-sm mb-2">Run at: {{ $scan->created_at }}</p>
+                <p class="text-gray-400 text-sm mb-2">
+                    Run By: {{ $scan->user->name ?? 'Unknown User' }} (User ID: {{ $scan->user_id }})
+                </p>
+
                 <p class="text-gray-400 text-sm mb-4">Features: {{ implode(', ', $scan->features ?? []) }}</p>
 {{-- 
                 <!-- Hosts Table -->

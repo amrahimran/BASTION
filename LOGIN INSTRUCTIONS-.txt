@@ -1,0 +1,13 @@
+LOGIN INSTRUCTIONS-
+
+admin login :
+
+email:admin@gmail.com
+
+password: admin123
+
+
+user login:
+email: yaqubimran@gmail.com
+
+password: yaqub123
