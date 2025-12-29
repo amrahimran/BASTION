@@ -28,7 +28,7 @@
 
                     @if(Auth::check() && Auth::user()->role === 'admin')
                     <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                        <x-nav-link href="{{ route('dashboard') }}" :active="request()->routeIs('dashboard')">
+                        <x-nav-link href="{{ route('simulation.index') }}" :active="request()->routeIs('dashboard')">
                             {{ __('Simulation') }}
                         </x-nav-link>
                     </div>
@@ -41,9 +41,10 @@
                     </div>
 
                     <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                        <x-nav-link href="{{ route('dashboard') }}" :active="request()->routeIs('dashboard')">
+                        <x-nav-link href="{{ route('simulation.reports') }}" :active="request()->routeIs('simulation.reports')">
                             {{ __('Simulation Reports') }}
                         </x-nav-link>
+
                     </div>
 
                     <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
@@ -53,8 +54,8 @@
                     </div>
 
                     <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                        <x-nav-link href="{{ route('dashboard') }}" :active="request()->routeIs('dashboard')">
-                            {{ __('Pricing') }}
+                        <x-nav-link href="{{ route('activity.history') }}" :active="request()->routeIs('activity.history')">
+                            {{ __('Activity History') }}
                         </x-nav-link>
                     </div>
                 </div>

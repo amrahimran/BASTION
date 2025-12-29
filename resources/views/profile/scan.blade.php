@@ -50,16 +50,43 @@
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     @foreach($featuresList as $key => $item)
-                        <label class="flex items-start bg-[#0b1d2a] border border-gray-600 p-3 rounded-lg">
-                            <input type="checkbox" name="features[]" value="{{ $key }}" class="mr-3 mt-1">
-                            <span class="text-gray-300 text-sm">
-                                <span class="font-semibold">{{ $item['label'] }}</span>
-                                <br>
-                                <span class="text-gray-500 text-xs">{{ $item['desc'] }}</span>
-                            </span>
-                        </label>
+                        <div x-data="{ open: false }"
+                            class="bg-[#0b1d2a] border border-gray-600 p-4 rounded-lg">
+
+                            <label class="flex items-start">
+                                <input type="checkbox" name="features[]" value="{{ $key }}" class="mr-3 mt-1">
+
+                                <div class="w-full">
+                                    <!-- Feature Title -->
+                                    <span class="text-[#00c3b3] text-base font-bold">
+                                        {{ $item['label'] }}
+                                    </span>
+
+                                    <!-- Short One-Line Description -->
+                                    <p class="text-white font-semibold text-[13px] mt-1">
+                                        {{ $item['short'] }}
+                                    </p>
+
+                                    <!-- Toggle Button -->
+                                    <button type="button"
+                                        @click="open = !open"
+                                        class="text-[#00c3b3] text-xs mt-2 flex items-center">
+                                        <span x-show="!open">Show more ▼</span>
+                                        <span x-show="open">Show less ▲</span>
+                                    </button>
+
+                                    <!-- Expanded Full Description -->
+                                    <div x-show="open"
+                                        x-transition
+                                        class="text-white text-medium mt-2 border-t border-gray-700 pt-2">
+                                        {{ $item['long'] }}
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
                     @endforeach
                 </div>
+
 
                 <!-- Start Scan -->
                 <button type="submit"

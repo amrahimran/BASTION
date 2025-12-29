@@ -20,48 +20,27 @@
             </p>
         </div>
 
-        <!-- Parsed Results -->
-        {{-- <div class="max-w-5xl mx-auto mb-6">
-            <h3 class="text-[#00c3b3] font-bold text-lg mb-2">Parsed Results:</h3>
+        <!-- AI Summary Section -->
+        <div class="max-w-5xl mx-auto mb-8 bg-[#102635] border border-[#00c3b3]/30 rounded-xl p-6 shadow-lg">
 
-            @if(isset($scan->parsed_results_detailed['ports']) && count($scan->parsed_results_detailed['ports']) > 0)
-                <div class="overflow-x-auto">
-                    <table class="w-full border-collapse text-sm">
-                        <thead class="bg-[#0f2a3a]">
-                            <tr>
-                                <th class="p-2 text-left text-[#00c3b3]">Port</th>
-                                <th class="p-2 text-left text-[#00c3b3]">Service</th>
-                                <th class="p-2 text-left text-[#00c3b3]">State</th>
-                                <th class="p-2 text-left text-[#00c3b3]">Risk Level</th>
-                                <th class="p-2 text-left text-[#00c3b3]">Description</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($scan->parsed_results_detailed['ports'] as $p)
-                                @php
-                                    // Set row color based on risk
-                                    $rowColor = match($p['risk']) {
-                                        'High' => 'bg-red-700',
-                                        'Medium' => 'bg-yellow-700',
-                                        'Low' => 'bg-green-700',
-                                        default => 'bg-gray-800',
-                                    };
-                                @endphp
-                                <tr class="border-b border-gray-700 hover:bg-gray-900 {{ $rowColor }}">
-                                    <td class="p-2 font-semibold text-white">{{ $p['port'] ?? '-' }}</td>
-                                    <td class="p-2 text-white">{{ $p['service'] ?? '-' }}</td>
-                                    <td class="p-2 text-white">{{ $p['state'] ?? '-' }}</td>
-                                    <td class="p-2 font-bold text-white">{{ $p['risk'] }}</td>
-                                    <td class="p-2 text-white">{{ $p['description'] }}</td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-            @else
-                <p class="text-gray-400 text-sm">No parsed results available.</p>
-            @endif
-        </div> --}}
+            <h2 class="text-xl font-bold text-[#00c3b3] mb-4">
+                AI Security Summary
+            </h2>
+
+            <!-- Risk Legend -->
+            <div class="flex gap-3 mb-4">
+                <span class="px-3 py-1 rounded bg-red-600 text-white text-xs font-bold">HIGH RISK</span>
+                <span class="px-3 py-1 rounded bg-yellow-500 text-black text-xs font-bold">MEDIUM RISK</span>
+                <span class="px-3 py-1 rounded bg-green-600 text-white text-xs font-bold">LOW RISK</span>
+            </div>
+
+            <div class="bg-black/30 border border-gray-700 rounded-lg p-4 text-gray-200 whitespace-pre-line leading-relaxed">
+                {{-- {{ $aiSummary }} --}}
+                {{-- {!! $aiSummary !!} --}}
+                {!! $scan->ai_summary ?? $aiSummary !!}
+
+            </div>
+        </div>
 
         <!-- Raw Output -->
         <div class="max-w-5xl mx-auto mb-6">

@@ -17,6 +17,7 @@ class Scan extends Model
         'features',
         'ports',          // store parsed table
         'raw_output',
+         'ai_summary', 
     ];
 
     protected $casts = [

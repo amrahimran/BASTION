@@ -8,9 +8,13 @@
     <title>{{ $title ?? 'Bastion' }}</title>
 
     {{-- Example meta tags (can be dynamic too) --}}
-    <meta name="description" content="{{ $metaDescription ?? 'Your trusted online flower boutique' }}">
+    <meta name="description" content="{{ $metaDescription ?? "Your trusted online flower boutique" }}">
     <meta name="keywords" content="{{ $metaKeywords ?? 'flowers, bouquets, Tian Hua' }}">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600&display=swap" rel="stylesheet">
+
+    <script>
+        const csrf = "{{ csrf_token() }}";
+    </script>
 
 
     @vite('resources/css/app.css')

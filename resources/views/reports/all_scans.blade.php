@@ -7,7 +7,8 @@
         body { font-family: DejaVu Sans, sans-serif; font-size: 11px; }
         table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
         table, th, td { border: 1px solid #aaa; }
-        th, td { padding: 6px; }
+        th, td { padding: 6px; vertical-align: top; }
+        td.ai-summary { white-space: pre-wrap; max-width: 250px; }
         h1 { margin-bottom: 20px; }
     </style>
 </head>
@@ -24,6 +25,7 @@
             <th>Target</th>
             <th>Mode</th>
             <th>Features</th>
+            <th>AI Summary</th>
             <th>Date</th>
         </tr>
     </thead>
@@ -34,8 +36,13 @@
                 <td>{{ $scan->user->name ?? 'Unknown User' }}</td>
                 <td>{{ $scan->user->email ?? '-' }}</td>
                 <td>{{ $scan->target }}</td>
-                <td>{{ $scan->scan_mode }}</td>
+                <td>{{ ucfirst($scan->scan_mode) }}</td>
                 <td>{{ implode(', ', $scan->features ?? []) }}</td>
+                {{-- <td class="ai-summary">{!! $scan->ai_summary !!}</td> --}}
+                <td class="ai-summary">
+                    {{ strip_tags($scan->ai_summary) ?? 'AI summary not available' }}
+                </td>
+
                 <td>{{ $scan->created_at }}</td>
             </tr>
         @endforeach

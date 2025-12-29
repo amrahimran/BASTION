@@ -31,9 +31,11 @@
         </div>
 
         <div class="mt-8">
-            <a href="#" class="bg-[#00c3b3] text-black font-semibold px-8 py-3 rounded-lg hover:bg-[#00a79e] transition">
+             @if(Auth::check() && Auth::user()->role === 'admin')
+            <a href="{{ route('simulation.index') }}" class="bg-[#00c3b3] text-black font-semibold px-8 py-3 rounded-lg hover:bg-[#00a79e] transition">
                 Start Free Simulation
             </a>
+            @endif
         </div>
     </div>
 

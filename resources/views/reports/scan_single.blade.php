@@ -5,11 +5,11 @@
     <title>Scan Report #{{ $scan->id }}</title>
     <style>
         body { font-family: DejaVu Sans, sans-serif; font-size: 12px; }
-        h1, h2, h3 { margin: 0; padding: 6px 0; }
+        h1, h2 { margin: 0; padding: 6px 0; }
         table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
         table, th, td { border: 1px solid #aaa; }
         th, td { padding: 6px; text-align: left; }
-        .raw-output { white-space: pre-wrap; font-family: monospace; }
+        .ai-summary { white-space: pre-wrap; font-family: sans-serif; background: #f4f4f4; padding: 8px; border-radius: 4px; }
     </style>
 </head>
 <body>
@@ -30,9 +30,14 @@
     <tr><th>Run At</th><td>{{ $scan->created_at }}</td></tr>
 </table>
 
-<h2>Raw Output</h2>
+{{-- <h2>Raw Output</h2>
 <div class="raw-output">
     {{ $scan->raw_output ?? 'No raw output available.' }}
+</div> --}}
+
+<h2>AI Summary</h2>
+<div class="ai-summary">
+    {!! $scan->ai_summary ?? 'No AI summary available.' !!}
 </div>
 
 </body>

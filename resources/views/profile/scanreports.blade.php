@@ -100,13 +100,21 @@
                     <p class="text-gray-400 text-sm">No open ports detected.</p>
                 @endif --}}
 
+                @if(!empty($scan->ai_summary))
+                    <h4 class="text-gray-200 font-semibold mt-3">AI Security Summary:</h4>
+
+                    <div class="bg-black/40 border border-[#00c3b3]/30 rounded-lg p-4 text-sm text-gray-200 mb-4">
+                        {!! $scan->ai_summary !!}
+                    </div>
+                @endif
+
                 <!-- Raw Output -->
                 <h4 class="text-gray-200 font-semibold mt-3">Raw Output:</h4>
-                <pre class="text-xs text-[#00ff9d] whitespace-pre-wrap bg-black/40 p-3 rounded overflow-x-auto">
-{{ $scan->raw_output ?? 'No raw output available.' }}
-                </pre>
+                    <pre class="text-xs text-[#00ff9d] whitespace-pre-wrap bg-black/40 p-3 rounded overflow-x-auto">
+                    {{ $scan->raw_output ?? 'No raw output available.' }}
+                    </pre>
 
-            </div>
+                </div>
         @empty
             <p class="text-center text-gray-400">No scans available yet.</p>
         @endforelse

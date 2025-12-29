@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ScanController;
+use App\Http\Controllers\ActivityHistoryController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -47,3 +48,59 @@ Route::get('/scan/export/{id}', [ScanController::class, 'exportSingleCsv'])->nam
 
 Route::get('/scans/{id}/pdf', [ScanController::class, 'exportSinglePdf'])->name('scans.export.pdf');
 Route::get('/scans/pdf/all', [ScanController::class, 'exportAllPdf'])->name('scans.export.pdf.all');
+
+Route::get('/activity-history', [ActivityHistoryController::class, 'index'])
+    ->middleware('auth')
+    ->name('activity.history');
+
+    Route::get('/test-cohere', function () {
+    dd(env('COHERE_API_KEY'));
+});
+
+// Route::get('/simulation', function () {
+// return view('profile.simulation'); // Make sure simulation.blade.php is in resources/views/profile/
+// })->name('simulation');
+
+
+// use App\Http\Controllers\SimulationController;
+
+// Route::middleware(['auth'])->group(function () {
+
+//     Route::prefix('simulation')->group(function () {
+//         Route::post('/run/mitm', [SimulationController::class, 'runMitm']);
+//         Route::get('/mitm/result/{id}', [SimulationController::class, 'showMitmResult'])
+//             ->name('simulation.mitm.result');
+//     });
+
+//     Route::get('profile/simulationreports', [SimulationController::class, 'reports'])
+//         ->name('simulation.reports');
+// });
+
+
+use App\Http\Controllers\SimulationController;
+
+Route::middleware(['auth'])->group(function () {
+
+    Route::get('/simulation', [SimulationController::class, 'index'])
+        ->name('simulation.index');
+
+    Route::post('/simulation/run/mitm', [SimulationController::class, 'runMitm'])
+        ->name('mitm.run');
+
+    Route::post('/simulation/run/ddos', [SimulationController::class, 'runDdos'])
+    ->name('ddos.run');
+
+    Route::post('/simulation/phishing/run', [SimulationController::class, 'runPhishing'])
+    ->name('phishing.run');
+
+
+    Route::get('/simulation/result/{simulation}', [SimulationController::class, 'result'])
+        ->name('simulation.result');
+
+});
+
+Route::prefix('simulations')->middleware('auth')->group(function() {
+    Route::get('/reports', [SimulationController::class, 'reports'])->name('simulation.reports');
+    Route::get('/export/pdf/all', [SimulationController::class, 'exportAllPdf'])->name('simulations.export.pdf.all');
+    Route::get('/export/pdf/{id}', [SimulationController::class, 'exportSinglePdf'])->name('simulations.export.pdf.single');
+});
