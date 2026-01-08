@@ -104,3 +104,25 @@ Route::prefix('simulations')->middleware('auth')->group(function() {
     Route::get('/export/pdf/all', [SimulationController::class, 'exportAllPdf'])->name('simulations.export.pdf.all');
     Route::get('/export/pdf/{id}', [SimulationController::class, 'exportSinglePdf'])->name('simulations.export.pdf.single');
 });
+
+use App\Http\Controllers\FaqController;
+
+Route::middleware(['auth'])->group(function () {
+
+    Route::get('/faq', [FaqController::class, 'index'])->name('faq.index');
+
+    Route::get('/admin/faq', [FaqController::class, 'adminIndex'])
+        ->name('admin.faq.index')
+        ->middleware('can:admin');
+
+});
+
+
+Route::get('/faq', [FaqController::class, 'index'])->name('faq');
+
+Route::middleware(['auth'])->group(function () {
+    Route::post('/faq', [FaqController::class, 'store'])->name('admin.faq.store');
+    Route::patch('/faq/{faq}/toggle', [FaqController::class, 'toggle'])->name('admin.faq.toggle');
+    Route::patch('/faq/{faq}/update', [FaqController::class, 'update'])->name('admin.faq.update');
+    Route::delete('/faq/{faq}', [FaqController::class, 'destroy'])->name('admin.faq.destroy');
+});

@@ -26,7 +26,8 @@
 
         <div class="max-w-4xl mx-auto bg-[#102635] border border-[#00c3b3]/20 rounded-xl shadow-lg p-8">
 
-            <form method="POST" action="{{ route('scan.run') }}">
+            <!-- 🔹 ONLY CHANGE: onsubmit -->
+            <form method="POST" action="{{ route('scan.run') }}" onsubmit="showScanProgress()">
                 @csrf
 
                 <!-- Auto Detect Only -->
@@ -57,17 +58,14 @@
                                 <input type="checkbox" name="features[]" value="{{ $key }}" class="mr-3 mt-1">
 
                                 <div class="w-full">
-                                    <!-- Feature Title -->
                                     <span class="text-[#00c3b3] text-base font-bold">
                                         {{ $item['label'] }}
                                     </span>
 
-                                    <!-- Short One-Line Description -->
                                     <p class="text-white font-semibold text-[13px] mt-1">
                                         {{ $item['short'] }}
                                     </p>
 
-                                    <!-- Toggle Button -->
                                     <button type="button"
                                         @click="open = !open"
                                         class="text-[#00c3b3] text-xs mt-2 flex items-center">
@@ -75,7 +73,6 @@
                                         <span x-show="open">Show less ▲</span>
                                     </button>
 
-                                    <!-- Expanded Full Description -->
                                     <div x-show="open"
                                         x-transition
                                         class="text-white text-medium mt-2 border-t border-gray-700 pt-2">
@@ -87,7 +84,6 @@
                     @endforeach
                 </div>
 
-
                 <!-- Start Scan -->
                 <button type="submit"
                     class="w-full mt-6 bg-[#00c3b3] text-black font-semibold px-6 py-3 rounded-lg hover:bg-[#00a79e]">
@@ -96,7 +92,36 @@
 
             </form>
         </div>
-
     </div>
+
+    <!-- 🔹 PROGRESS OVERLAY (ADDED, DOES NOT TOUCH EXISTING CODE) -->
+    <div id="scanProgressOverlay"
+         class="fixed inset-0 bg-black/70 hidden items-center justify-center z-50">
+
+        <div class="bg-[#102635] p-6 rounded-xl w-full max-w-md border border-[#00c3b3]/40 text-center">
+            <h3 class="text-[#00c3b3] font-semibold mb-3">
+                Scan in Progress
+            </h3>
+
+            <!-- Progress Bar -->
+            <div class="w-full bg-[#0b1d2a] rounded-full h-3 overflow-hidden">
+                <div class="h-full w-full animate-pulse bg-gradient-to-r from-[#00c3b3] to-cyan-400">
+                </div>
+            </div>
+
+            <p class="text-xs text-gray-400 mt-3">
+                Detecting devices & analyzing vulnerabilities...
+            </p>
+        </div>
+    </div>
+
+    <!-- 🔹 MINIMAL JS -->
+    <script>
+        function showScanProgress() {
+            const overlay = document.getElementById('scanProgressOverlay');
+            overlay.classList.remove('hidden');
+            overlay.classList.add('flex');
+        }
+    </script>
 
 </x-app-layout>

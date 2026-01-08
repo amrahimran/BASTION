@@ -21,7 +21,7 @@ class SimulationController extends Controller
     // ---------------- MITM ----------------
    public function runMitm(AiExplanationService $ai)
 {
-    set_time_limit(300);
+    set_time_limit(0);
 
     // Detect local subnet
     $localIp = gethostbyname(gethostname());

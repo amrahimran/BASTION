@@ -101,7 +101,7 @@
                 @if(!empty($simulation->ai_explanation))
                     <h4 class="text-gray-200 font-semibold mt-4">AI Explanation</h4>
                     <div class="bg-black/40 border border-[#00c3b3]/30 rounded-lg p-4 text-sm text-gray-300 mt-2">
-                        {!! nl2br(e($simulation->ai_explanation)) !!}
+                        {!! ($simulation->ai_explanation) !!}
                     </div>
                 @endif
 
