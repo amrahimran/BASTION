@@ -192,6 +192,37 @@
         </div>
     </div>
 
+    <!-- PASSIVE SNIFFING -->
+<div class="bg-[#102635] border border-[#00c3b3]/30 rounded-xl p-6 shadow-lg">
+
+    <h2 class="text-xl font-semibold text-[#00c3b3] mb-2">
+        Passive Network Sniffing Simulation
+    </h2>
+
+    <p class="text-white text-md mb-4">
+        This simulation demonstrates what information could be silently
+        observed on your company network without hacking or disrupting systems.
+        <br><br>
+        Attackers do not need to modify traffic — they only need to listen.
+    </p>
+
+    <div class="bg-[#0b1d2a] border border-yellow-400/30 text-yellow-300 text-xs p-3 rounded mb-4">
+        This is a read-only awareness simulation. No network traffic is captured.
+    </div>
+
+    <form method="POST" action="{{ route('sniffing.run') }}" onsubmit="showProgress()">
+        @csrf
+
+        <div class="flex justify-end">
+            <button type="submit"
+                class="bg-[#00c3b3] text-black px-6 py-2 rounded-lg font-semibold hover:opacity-90">
+                Run Sniffing Simulation
+            </button>
+        </div>
+    </form>
+</div>
+
+
     <!-- PROGRESS OVERLAY -->
     <div id="progressOverlay"
          class="fixed inset-0 bg-black/70 hidden items-center justify-center z-50">

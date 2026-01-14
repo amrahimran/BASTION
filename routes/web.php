@@ -126,3 +126,11 @@ Route::middleware(['auth'])->group(function () {
     Route::patch('/faq/{faq}/update', [FaqController::class, 'update'])->name('admin.faq.update');
     Route::delete('/faq/{faq}', [FaqController::class, 'destroy'])->name('admin.faq.destroy');
 });
+
+//passive sniffing.
+
+Route::post('/simulation/sniffing/run', [SimulationController::class, 'runPassiveSniffing'])
+    ->name('sniffing.run');
+
+Route::get('/simulation/result/{simulation}', [SimulationController::class, 'result'])
+    ->name('simulation.result');

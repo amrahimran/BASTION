@@ -6,45 +6,87 @@ use Illuminate\Support\Facades\Http;
 
 class AiExplanationService
 {
-    public function generateMitmExplanation(array $data): string
-    {
-        $prompt = "
-Explain the following Man-in-the-Middle (MITM) simulation result
-to NON-TECHNICAL office staff.
+//     public function generateMitmExplanation(array $data): string
+//     {
+//         $prompt = "
+// Explain the following Man-in-the-Middle (MITM) simulation result
+// to NON-TECHNICAL office staff.
 
-Simulation Details:
-- Intercepted network traffic: {$data['intercepted_packets']}
-- Credentials exposed: {$data['exposed_credentials']}
-- Risk level: {$data['risk_level']}
+// Simulation Details:
+// - Intercepted network traffic: {$data['intercepted_packets']}
+// - Credentials exposed: {$data['exposed_credentials']}
+// - Risk level: {$data['risk_level']}
 
-Explain clearly using:
-- Short paragraphs
-- HTML-friendly bullet points <ul><li>
-- Highlight key items using <strong>
-- Avoid technical jargon
+// Explain clearly using:
+// - Short paragraphs
+// - HTML-friendly bullet points <ul><li>
+// - Highlight key items using <strong>
+// - Avoid technical jargon
 
-Content should be easy to read for non-technical users.
+// Content should be easy to read for non-technical users.
+// ";
+
+//         $response = Http::post(
+//             'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key='
+//             . config('services.gemini.key'),
+//             [
+//                 'contents' => [
+//                     [
+//                         'parts' => [
+//                             ['text' => $prompt]
+//                         ]
+//                     ]
+//                 ]
+//             ]
+//         );
+
+//         return $response->json('candidates.0.content.parts.0.text')
+//             ?? 'AI explanation could not be generated.';
+//     }
+
+   
+public function generateMitmExplanation(array $data): string
+{
+    $prompt = "
+Audience: Non-technical staff.
+
+Explain a Man-in-the-Middle attack simulation.
+
+Results:
+Devices detected on the network: {$data['detected_devices']}
+Data packets observed: {$data['intercepted_packets']}
+Login details exposed: {$data['exposed_credentials']}
+Risk level: {$data['risk_level']}
+
+Explain:
+- What MITM means
+- Why data can be seen
+- Why encryption matters
+- How staff reduce risk
+
+Use short paragraphs.
+Plain English.
+No bullet points.
+No headings.
 ";
 
-        $response = Http::post(
-            'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key='
-            . config('services.gemini.key'),
-            [
-                'contents' => [
-                    [
-                        'parts' => [
-                            ['text' => $prompt]
-                        ]
-                    ]
-                ]
-            ]
-        );
+    $response = Http::post(
+        'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key='
+        . config('services.gemini.key'),
+        [
+            'contents' => [[
+                'parts' => [['text' => $prompt]]
+            ]]
+        ]
+    );
 
-        return $response->json('candidates.0.content.parts.0.text')
-            ?? 'AI explanation could not be generated.';
-    }
+    return trim(
+        $response->json('candidates.0.content.parts.0.text')
+        ?? 'Explanation unavailable.'
+    );
+}
 
-    public function generateDdosExplanation(array $data): string
+public function generateDdosExplanation(array $data): string
     {
         $prompt = "
 Explain the following Distributed Denial-of-Service (DDoS) simulation
@@ -160,5 +202,73 @@ End the response with ONE short sentence summarizing the overall risk.
     return $response->json('candidates.0.content.parts.0.text')
         ?? 'AI explanation could not be generated.';
 }
+
+public function generateSniffingExplanation(array $data): string
+{
+    $prompt = "
+        Audience: Non-technical office staff
+
+        You are explaining the result of a Passive Network Sniffing security simulation.
+        This is an awareness exercise, not a real attack.
+
+        Rules:
+        Use plain English only.
+        Keep sentences short.
+        No technical jargon.
+        No bullet points.
+        No markdown.
+        Add a blank line between each section.
+        Do not mention instructions or rules.
+
+        Write the response using EXACTLY the following format and headings.
+
+        What happened in this simulation?
+        Passive sniffing means quietly listening to network traffic.
+        It is like overhearing conversations in a public place.
+        No systems were hacked or broken into.
+
+        What information could be seen?
+        Unencrypted services detected: {$data['unencrypted_services']}
+        Visible network sessions: {$data['exposed_sessions']}
+        Login details potentially visible: {$data['credentials_visible']}
+
+        Why is this a risk?
+        Seeing this information can expose private company data.
+        It can damage trust with staff and customers.
+        Sensitive business information could be misused.
+
+        How does encryption help?
+        Encryption protects information by scrambling it.
+        Even if someone listens, they cannot understand it.
+        Only the intended receiver can read the data.
+
+        What should the company do?
+        Secure all Wi-Fi networks.
+        Enforce HTTPS on all systems.
+        Use VPNs for remote access.
+        Improve staff awareness.
+
+        Overall risk level: {$data['risk_level']}
+        ";
+
+
+    $response = Http::post(
+        'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key='
+        . config('services.gemini.key'),
+        [
+            'contents' => [
+                [
+                    'parts' => [
+                        ['text' => $prompt]
+                    ]
+                ]
+            ]
+        ]
+    );
+
+    return $response->json('candidates.0.content.parts.0.text')
+        ?? 'AI explanation could not be generated.';
+}
+
 
 }

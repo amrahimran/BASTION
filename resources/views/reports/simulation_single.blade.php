@@ -128,7 +128,9 @@
         <table>
             <tr>
                 <td class="label">Simulation Type</td>
-                <td>{{ strtoupper($simulation->simulation_type) }}</td>
+                <td>{{ strtoupper(str_replace('_', ' ', $simulation->simulation_type)) }}</td>
+
+                {{-- <td>{{ strtoupper($simulation->simulation_type) }}</td> --}}
             </tr>
             <tr>
                 <td class="label">Run By</td>

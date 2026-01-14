@@ -218,6 +218,64 @@ class SimulationController extends Controller
     return redirect()->route('simulation.result', $simulation->id);
 }
 
+// ---------------- PASSIVE SNIFFING ----------------
+public function runPassiveSniffing(AiExplanationService $ai)
+{
+    set_time_limit(0);
+
+    // Detect local subnet (read-only)
+    $localIp = gethostbyname(gethostname());
+    $subnet = preg_replace('/\.\d+$/', '.0/24', $localIp);
+
+    // SAFE scan – service visibility only
+    $output = [];
+    exec("nmap -sT -p 21,23,25,80,110,143,443 $subnet", $output);
+
+    // Simulated sniffing exposure
+    $unencryptedServices = rand(1, 4);
+    $exposedSessions = rand(10, 40);
+    $credentialsVisible = rand(0, 5);
+
+    // Risk evaluation
+    if ($credentialsVisible >= 3) {
+        $riskLevel = 'High';
+    } elseif ($exposedSessions > 20) {
+        $riskLevel = 'Medium';
+    } else {
+        $riskLevel = 'Low';
+    }
+
+    $aiExplanation = $ai->generateSniffingExplanation([
+        'unencrypted_services' => $unencryptedServices,
+        'exposed_sessions' => $exposedSessions,
+        'credentials_visible' => $credentialsVisible,
+        'risk_level' => $riskLevel,
+    ]);
+
+    $simulation = Simulation::create([
+        'user_id' => auth()->id(),
+        'simulation_type' => 'PASSIVE_SNIFFING',
+        'status' => 'Completed',
+        'unencrypted_services' => $unencryptedServices,
+        'exposed_sessions' => $exposedSessions,
+        'credentials_visible' => $credentialsVisible,
+        'risk_level' => $riskLevel,
+        'ai_explanation' => $aiExplanation,
+    ]);
+
+    ActivityLogs::create([
+        'user_id' => auth()->id(),
+        'action' => 'Ran Passive Sniffing simulation',
+        'details' => json_encode([
+            'unencrypted_services' => $unencryptedServices,
+            'risk_level' => $riskLevel,
+        ]),
+    ]);
+
+    return redirect()->route('simulation.result', $simulation->id);
+}
+
+
 public function result(Simulation $simulation)
 {
     return view('profile.simulationresult', compact('simulation'));

@@ -7,44 +7,97 @@
 
     <div class="min-h-screen bg-[#0b1d2a] px-6 py-10">
 
-        <div class="max-w-4xl mx-auto">
+        <div class="max-w-4xl mx-auto" x-data="{ search: '' }">
 
-            <h1 class="text-3xl font-bold text-[#00c3b3] mb-6">
+            <h1 class="text-3xl font-bold text-[#00c3b3] mb-12 text-center">
                 Help & Security Guidance
             </h1>
+
+            <!-- SEARCH BAR -->
+            <div class="mb-6">
+                <input
+                    type="text"
+                    x-model="search"
+                    placeholder="Search by question or category..."
+                    class="w-full px-4 py-2 rounded-lg bg-[#102635] border border-gray-700
+                           text-white placeholder-gray-400 focus:outline-none
+                           focus:ring-2 focus:ring-[#00c3b3]"
+                >
+            </div>
 
             @auth
                 @if(auth()->user()->isAdmin())
                     <div class="mb-4 flex justify-end">
                         <a href="{{ route('admin.faq.index') }}"
-                        class="bg-[#00c3b3] text-black px-3 py-1 rounded hover:opacity-90 transition">
+                           class="bg-[#00c3b3] text-black px-3 py-1 rounded hover:opacity-90 transition">
                             Manage FAQs
                         </a>
                     </div>
                 @endif
             @endauth
 
-
             @forelse($faqs->groupBy('category') as $category => $items)
 
-                <h2 class="text-xl font-semibold text-white mt-8 mb-4">
-                    {{ strtoupper($category) }}
-                </h2>
+                <!-- CATEGORY -->
+                <div
+                    x-show="
+                        search === '' ||
+                        '{{ strtolower($category) }}'.includes(search.toLowerCase()) ||
+                        [...$el.querySelectorAll('[data-question]')]
+                            .some(q => q.dataset.question.includes(search.toLowerCase()))
+                    "
+                >
+                    <h2 class="text-xl font-semibold text-white mt-8 mb-4">
+                        {{ strtoupper($category) }}
+                    </h2>
 
-                @foreach($items as $faq)
-                    <div class="mb-4 bg-gradient-to-r from-[#102635] to-[#0d1f2b]
-                                border border-gray-700 rounded-xl p-5">
+                    @foreach($items as $faq)
+                        <div
+                            x-data="{ open: false }"
+                            data-question="{{ strtolower($faq->question) }}"
+                            x-show="
+                                search === '' ||
+                                '{{ strtolower($category) }}'.includes(search.toLowerCase()) ||
+                                '{{ strtolower($faq->question) }}'.includes(search.toLowerCase())
+                            "
+                            class="mb-4 bg-gradient-to-r from-[#102635] to-[#0d1f2b]
+                                   border border-gray-700 rounded-xl p-5"
+                        >
 
-                        <h3 class="text-white font-semibold text-lg mb-2">
-                            {{ $faq->question }}
-                        </h3>
+                            <!-- CLICKABLE QUESTION AREA -->
+                            <div
+                                @click="open = !open"
+                                class="flex justify-between items-center cursor-pointer"
+                            >
+                                <h3 class="text-white font-semibold text-lg">
+                                    {{ $faq->question }}
+                                </h3>
 
-                        <p class="text-gray-300 leading-relaxed">
-                            {{ $faq->answer }}
-                        </p>
+                                <!-- Arrow -->
+                                <svg
+                                    class="w-5 h-5 text-[#00c3b3] transform transition-transform duration-200"
+                                    :class="{ 'rotate-180': open }"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </div>
 
-                    </div>
-                @endforeach
+                            <!-- ANSWER -->
+                            <div
+                                x-show="open"
+                                x-collapse
+                                class="mt-4 text-gray-300 leading-relaxed"
+                            >
+                                {{ $faq->answer }}
+                            </div>
+
+                        </div>
+                    @endforeach
+                </div>
 
             @empty
                 <p class="text-gray-400">

@@ -105,16 +105,102 @@
             </div>
         @endif
 
+        @if($simulation->simulation_type === 'PASSIVE_SNIFFING')
+
+<!-- Passive Sniffing Summary -->
+<div class="bg-[#102635] border border-[#00c3b3]/30 rounded-xl p-6 mb-6">
+
+    <h3 class="text-lg font-semibold text-[#00c3b3] mb-4">
+        Network Visibility Observed
+    </h3>
+
+    <p class="text-gray-300 text-sm mb-6">
+        This simulation shows what information could be silently observed
+        on your network without breaking into systems or changing traffic.
+    </p>
+
+    <!-- Metrics Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+
+        <div class="bg-[#0b1d2a] rounded-xl p-4 border border-yellow-400/30">
+            <div class="text-yellow-300 text-sm mb-1">
+                Unencrypted Services
+            </div>
+            <div class="text-3xl font-bold text-white">
+                {{ $simulation->unencrypted_services }}
+            </div>
+            <p class="text-xs text-gray-400 mt-1">
+                Services sending data without encryption
+            </p>
+        </div>
+
+        <div class="bg-[#0b1d2a] rounded-xl p-4 border border-blue-400/30">
+            <div class="text-blue-300 text-sm mb-1">
+                Visible Network Sessions
+            </div>
+            <div class="text-3xl font-bold text-white">
+                {{ $simulation->exposed_sessions }}
+            </div>
+            <p class="text-xs text-gray-400 mt-1">
+                User activity visible to a silent listener
+            </p>
+        </div>
+
+        <div class="bg-[#0b1d2a] rounded-xl p-4 border border-red-400/30">
+            <div class="text-red-400 text-sm mb-1">
+                Credentials at Risk
+            </div>
+            <div class="text-3xl font-bold text-white">
+                {{ $simulation->credentials_visible }}
+            </div>
+            <p class="text-xs text-gray-400 mt-1">
+                Login details potentially exposed
+            </p>
+        </div>
+
+    </div>
+
+    <!-- Risk Badge -->
+    <div>
+        <span class="inline-block px-4 py-1 rounded-full text-xs font-semibold
+            {{ $simulation->risk_level === 'High'
+                ? 'bg-red-500/20 text-red-400'
+                : ($simulation->risk_level === 'Medium'
+                    ? 'bg-yellow-500/20 text-yellow-300'
+                    : 'bg-green-500/20 text-green-300') }}">
+            Risk Level: {{ $simulation->risk_level }}
+        </span>
+    </div>
+
+</div>
+
+<!-- Staff Takeaway -->
+<div class="bg-[#102635] border border-green-400/30 rounded-xl p-6 mb-6">
+    <h3 class="text-lg font-semibold text-green-400 mb-2">
+        What Staff Should Learn
+    </h3>
+
+    <ul class="list-disc ml-5 text-sm text-gray-300 space-y-1">
+        <li>Network traffic can be observed without obvious signs</li>
+        <li>Unencrypted services expose sensitive information</li>
+        <li>HTTPS and encrypted connections reduce this risk</li>
+        <li>Public or shared networks increase exposure</li>
+    </ul>
+</div>
+
+@endif
+
+
         <!-- AI Explanation -->
         <div class="bg-[#0b1d2a] border border-blue-400 rounded-xl p-6 mb-6">
             <h3 class="text-lg font-semibold text-blue-300 mb-4">
                  Security Explanation
             </h3>
 
-            <div class="text-gray-100 text-sm leading-relaxed space-y-4
-                {{ $simulation->simulation_type === 'PHISHING' ? 'whitespace-pre-line' : '' }}">
-                {!! $simulation->ai_explanation ?? '<span class="text-gray-400">AI explanation not available.</span>' !!}
+            <div class="text-gray-100 text-sm leading-relaxed whitespace-pre-line">
+                {{ $simulation->ai_explanation ?? 'AI explanation not available.' }}
             </div>
+
         </div>
 
         <!-- Takeaway -->
