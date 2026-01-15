@@ -24,7 +24,6 @@
 
             <!-- MITM Simulation -->
             <div class="bg-[#102635] border border-[#00c3b3]/30 rounded-xl p-6 shadow-lg">
-
                 <h2 class="text-xl font-semibold text-[#00c3b3] mb-2">
                     Man-in-the-Middle (MITM) Simulation
                 </h2>
@@ -56,7 +55,6 @@
 
             <!-- DDOS Simulation -->
             <div class="bg-[#102635] border border-[#00c3b3]/30 rounded-xl p-6 shadow-lg">
-
                 <h2 class="text-xl font-semibold text-[#00c3b3] mb-2">
                     Distributed Denial-of-Service (DDoS) Simulation
                 </h2>
@@ -78,38 +76,22 @@
                     @csrf
 
                     <div>
-                        <label class="block text-xs mb-1">
-                            Attack Strength
-                        </label>
+                        <label class="block text-xs mb-1">Attack Strength</label>
                         <select name="mode"
                             class="w-full bg-[#0b1d2a] border border-gray-600 rounded px-3 py-2 text-sm text-white">
-                            <option value="Low">
-                                Low – Represents a small increase in traffic that may slightly slow the system
-                            </option>
-                            <option value="Medium">
-                                Medium – Represents heavy usage that causes noticeable delays and timeouts
-                            </option>
-                            <option value="High">
-                                High – Represents extreme overload where the system becomes unavailable
-                            </option>
+                            <option value="Low">Low – Represents a small increase in traffic</option>
+                            <option value="Medium">Medium – Causes noticeable delays</option>
+                            <option value="High">High – System becomes unavailable</option>
                         </select>
                     </div>
 
                     <div>
-                        <label class="block text-xs mb-1">
-                            Target System
-                        </label>
+                        <label class="block text-xs mb-1">Target System</label>
                         <select name="target"
                             class="w-full bg-[#0b1d2a] border border-gray-600 rounded px-3 py-2 text-sm text-white">
-                            <option value="Public Website">
-                                Public Website – A company website accessed by anyone on the internet
-                            </option>
-                            <option value="Internal Application">
-                                Internal Application – Systems used by employees within the organization
-                            </option>
-                            <option value="Customer Portal">
-                                Customer Portal – Platforms used by customers to log in or place requests
-                            </option>
+                            <option value="Public Website">Public Website</option>
+                            <option value="Internal Application">Internal Application</option>
+                            <option value="Customer Portal">Customer Portal</option>
                         </select>
                     </div>
 
@@ -123,64 +105,22 @@
             </div>
 
             <!-- PHISHING -->
-            <div class="bg-[#102635] border border-[#00c3b3]/30 rounded-xl p-6 shadow-lg">
-
+            {{-- <div class="bg-[#102635] border border-[#00c3b3]/30 rounded-xl p-6 shadow-lg">
                 <h2 class="text-xl font-semibold text-[#00c3b3] mb-2">
                     Phishing Awareness Simulation
                 </h2>
 
                 <p class="text-white text-md mb-4">
                     Phishing attacks use fake but convincing messages to trick people into
-                    clicking malicious links or sharing confidential information such as passwords.
-                    These messages often look like they come from trusted sources.
-                    <br><br>
-                    This simulation helps staff learn how phishing attempts are structured
-                    and why even careful users can sometimes be fooled.
+                    clicking malicious links or sharing confidential information.
                 </p>
 
                 <div class="bg-[#0b1d2a] border border-yellow-400/30 text-yellow-300 text-xs p-3 rounded mb-4">
                     This is an awareness simulation only. No real emails or messages are sent.
                 </div>
 
-                <form method="POST" action="{{ route('phishing.run') }}" class="space-y-4" onsubmit="showProgress()">
+                <form method="POST" action="{{ route('phishing.run') }}" onsubmit="showProgress()">
                     @csrf
-
-                    <div>
-                        <label class="block text-xs mb-1">
-                            Email Theme
-                        </label>
-                        <select name="theme"
-                            class="w-full bg-[#0b1d2a] border border-gray-600 rounded px-3 py-2 text-sm text-white">
-                            <option value="Password Reset">
-                                Password Reset – Tries to create urgency by claiming your password must be changed
-                            </option>
-                            <option value="Invoice Alert">
-                                Invoice Alert – Pretends to be a payment or billing-related message
-                            </option>
-                            <option value="HR Notice">
-                                HR Notice – Appears to come from the human resources department
-                            </option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label class="block text-xs mb-1">
-                            Target Audience
-                        </label>
-                        <select name="target"
-                            class="w-full bg-[#0b1d2a] border border-gray-600 rounded px-3 py-2 text-sm text-white">
-                            <option value="Employees">
-                                Employees – General staff members across the organization
-                            </option>
-                            <option value="Finance Team">
-                                Finance Team – Staff handling payments and financial data
-                            </option>
-                            <option value="IT Staff">
-                                IT Staff – Technical teams with system access
-                            </option>
-                        </select>
-                    </div>
-
                     <div class="flex justify-end">
                         <button type="submit"
                             class="bg-[#00c3b3] text-black px-6 py-2 rounded-lg font-semibold hover:opacity-90">
@@ -188,66 +128,64 @@
                         </button>
                     </div>
                 </form>
-            </div>
-        </div>
-    </div>
+            </div> --}}
 
-    <!-- PASSIVE SNIFFING -->
-<div class="bg-[#102635] border border-[#00c3b3]/30 rounded-xl p-6 shadow-lg">
+            <!-- PASSIVE SNIFFING (FIXED POSITION) -->
+            <div class="bg-[#102635] border border-[#00c3b3]/30 rounded-xl p-6 shadow-lg">
+                <h2 class="text-xl font-semibold text-[#00c3b3] mb-2">
+                    Passive Network Sniffing Simulation
+                </h2>
 
-    <h2 class="text-xl font-semibold text-[#00c3b3] mb-2">
-        Passive Network Sniffing Simulation
-    </h2>
+                <p class="text-white text-md mb-4">
+                    This simulation demonstrates what information could be silently
+                    observed on your company network without hacking or disrupting systems.
+                    <br><br>
+                    Attackers do not need to modify traffic — they only need to listen.
+                </p>
 
-    <p class="text-white text-md mb-4">
-        This simulation demonstrates what information could be silently
-        observed on your company network without hacking or disrupting systems.
-        <br><br>
-        Attackers do not need to modify traffic — they only need to listen.
-    </p>
-
-    <div class="bg-[#0b1d2a] border border-yellow-400/30 text-yellow-300 text-xs p-3 rounded mb-4">
-        This is a read-only awareness simulation. No network traffic is captured.
-    </div>
-
-    <form method="POST" action="{{ route('sniffing.run') }}" onsubmit="showProgress()">
-        @csrf
-
-        <div class="flex justify-end">
-            <button type="submit"
-                class="bg-[#00c3b3] text-black px-6 py-2 rounded-lg font-semibold hover:opacity-90">
-                Run Sniffing Simulation
-            </button>
-        </div>
-    </form>
-</div>
-
-
-    <!-- PROGRESS OVERLAY -->
-    <div id="progressOverlay"
-         class="fixed inset-0 bg-black/70 hidden items-center justify-center z-50">
-        <div class="bg-[#102635] p-6 rounded-xl w-full max-w-md text-center border border-[#00c3b3]/40">
-            <h3 class="text-[#00c3b3] font-semibold mb-3">
-                Simulation Running
-            </h3>
-
-            <div class="w-full bg-[#0b1d2a] rounded-full h-3 overflow-hidden">
-                <div id="progressBar"
-                     class="h-full w-full animate-pulse bg-gradient-to-r from-cyan-400 to-green-400">
+                <div class="bg-[#0b1d2a] border border-yellow-400/30 text-yellow-300 text-xs p-3 rounded mb-4">
+                    This is a read-only awareness simulation. No network traffic is captured.
                 </div>
+
+                <form method="POST" action="{{ route('sniffing.run') }}" onsubmit="showProgress()">
+                    @csrf
+                    <div class="flex justify-end">
+                        <button type="submit"
+                            class="bg-[#00c3b3] text-black px-6 py-2 rounded-lg font-semibold hover:opacity-90">
+                            Run Sniffing Simulation
+                        </button>
+                    </div>
+                </form>
             </div>
 
-            <p class="text-xs text-gray-400 mt-3">
-                Demonstrating the attack behavior in a safe and controlled environment…
-            </p>
         </div>
+
+        <!-- PROGRESS OVERLAY -->
+        <div id="progressOverlay"
+             class="fixed inset-0 bg-black/70 hidden items-center justify-center z-50">
+            <div class="bg-[#102635] p-6 rounded-xl w-full max-w-md text-center border border-[#00c3b3]/40">
+                <h3 class="text-[#00c3b3] font-semibold mb-3">
+                    Simulation Running
+                </h3>
+
+                <div class="w-full bg-[#0b1d2a] rounded-full h-3 overflow-hidden">
+                    <div id="progressBar"
+                         class="h-full w-full animate-pulse bg-gradient-to-r from-cyan-400 to-green-400">
+                    </div>
+                </div>
+
+                <p class="text-xs text-gray-400 mt-3">
+                    Demonstrating the attack behavior in a safe and controlled environment…
+                </p>
+            </div>
+        </div>
+
+        <script>
+            function showProgress() {
+                document.getElementById('progressOverlay').classList.remove('hidden');
+                document.getElementById('progressOverlay').classList.add('flex');
+            }
+        </script>
+
     </div>
-
-    <script>
-        function showProgress() {
-            document.getElementById('progressOverlay').classList.remove('hidden');
-            document.getElementById('progressOverlay').classList.add('flex');
-        }
-    </script>
-
 </x-app-layout>

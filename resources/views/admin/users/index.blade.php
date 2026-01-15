@@ -22,7 +22,7 @@
 
             <tbody class="text-gray-300">
                 @foreach($users as $user)
-                <tr class="border-b border-gray-700">
+                <tr class="border-b border-gray-700" x-data="{ confirmDelete: false }">
                     <td class="p-4">{{ $user->name }}</td>
                     <td class="p-4">{{ $user->email }}</td>
                     <td class="p-4 capitalize">{{ $user->role }}</td>
@@ -30,17 +30,56 @@
 
                         <a href="{{ route('admin.users.edit', $user->id) }}"
                            class="text-yellow-400 hover:text-yellow-300 font-semibold">
-                           Edit
+                            Edit
                         </a>
 
-                        <form method="POST" action="{{ route('admin.users.destroy', $user->id) }}">
-                            @csrf
-                            @method('DELETE')
-                            <button class="text-red-400 hover:text-red-300 font-semibold"
-                                    onclick="return confirm('Delete this user?')">
-                                Delete
-                            </button>
-                        </form>
+                        <!-- DELETE BUTTON -->
+                        <button
+                            class="text-red-400 hover:text-red-300 font-semibold"
+                            @click="confirmDelete = true"
+                        >
+                            Delete
+                        </button>
+
+                        <!-- CONFIRMATION MODAL -->
+                        <div
+                            x-show="confirmDelete"
+                            x-cloak
+                            class="fixed inset-0 bg-black/70 flex items-center justify-center z-50"
+                        >
+                            <div class="bg-[#102635] border border-red-400/40 rounded-xl p-6 w-full max-w-sm">
+
+                                <h2 class="text-xl font-bold text-red-400 mb-3">
+                                    Confirm Deletion
+                                </h2>
+
+                                <p class="text-gray-300 text-sm mb-6">
+                                    Are you sure you want to delete
+                                    <span class="font-semibold text-white">{{ $user->name }}</span>?
+                                    This action cannot be undone.
+                                </p>
+
+                                <div class="flex justify-end gap-3">
+                                    <button
+                                        class="px-4 py-2 rounded-lg bg-gray-600 hover:bg-gray-500 transition"
+                                        @click="confirmDelete = false"
+                                    >
+                                        Cancel
+                                    </button>
+
+                                    <form method="POST" action="{{ route('admin.users.destroy', $user->id) }}">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button
+                                            class="px-4 py-2 rounded-lg bg-red-500 text-white font-semibold hover:bg-red-600 transition"
+                                        >
+                                            Confirm Delete
+                                        </button>
+                                    </form>
+                                </div>
+
+                            </div>
+                        </div>
 
                     </td>
                 </tr>

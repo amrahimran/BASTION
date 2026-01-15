@@ -14,16 +14,29 @@
             </h1>
 
             <!-- SEARCH BAR -->
-            <div class="mb-6">
+            <div class="mb-6 relative">
+                <!-- Search Icon -->
+                <svg
+                    class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#00c3b3]"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    viewBox="0 0 24 24"
+                >
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M21 21l-4.35-4.35m1.6-5.65a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+
                 <input
                     type="text"
                     x-model="search"
                     placeholder="Search by question or category..."
-                    class="w-full px-4 py-2 rounded-lg bg-[#102635] border border-gray-700
-                           text-white placeholder-gray-400 focus:outline-none
-                           focus:ring-2 focus:ring-[#00c3b3]"
+                    class="w-full pl-12 pr-4 py-2 rounded-lg bg-[#102635] border border-gray-700
+                        text-white placeholder-gray-400 focus:outline-none
+                        focus:ring-2 focus:ring-[#00c3b3]"
                 >
             </div>
+
 
             @auth
                 @if(auth()->user()->isAdmin())
@@ -47,7 +60,7 @@
                             .some(q => q.dataset.question.includes(search.toLowerCase()))
                     "
                 >
-                    <h2 class="text-xl font-semibold text-white mt-8 mb-4">
+                    <h2 class="text-xl font-semibold text-white mt-8 mb-4 text-center">
                         {{ strtoupper($category) }}
                     </h2>
 
@@ -61,7 +74,7 @@
                                 '{{ strtolower($faq->question) }}'.includes(search.toLowerCase())
                             "
                             class="mb-4 bg-gradient-to-r from-[#102635] to-[#0d1f2b]
-                                   border border-gray-700 rounded-xl p-5"
+                                   border border-[#00c3b3] rounded-xl p-5"
                         >
 
                             <!-- CLICKABLE QUESTION AREA -->

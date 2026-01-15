@@ -252,7 +252,8 @@ public function generateSniffingExplanation(array $data): string
         ";
 
 
-    $response = Http::post(
+   try {
+    $response = Http::timeout(20)->post(
         'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key='
         . config('services.gemini.key'),
         [
@@ -266,8 +267,38 @@ public function generateSniffingExplanation(array $data): string
         ]
     );
 
-    return $response->json('candidates.0.content.parts.0.text')
-        ?? 'AI explanation could not be generated.';
+    if ($response->failed()) {
+        throw new \Exception('AI request failed');
+    }
+
+    return $response->json()['candidates'][0]['content']['parts'][0]['text']
+        ?? 'Simulation completed. AI explanation is currently unavailable.';
+
+} catch (\Exception $e) {
+
+    // ✅ FALLBACK – app continues normally
+    return "
+Security Explanation
+
+What happened in this simulation?
+Passive sniffing means quietly observing network traffic without interfering.
+
+What information could be exposed?
+Unencrypted data, visible sessions, and login details.
+
+Why is this a risk?
+Sensitive company information could be viewed or misused.
+
+How does encryption help?
+Encryption ensures intercepted data cannot be understood.
+
+What should the company do?
+Use HTTPS, secure Wi-Fi, apply VPNs, and train staff.
+
+Overall risk level: {$data['risk_level']}
+";
+}
+
 }
 
 
