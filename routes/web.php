@@ -84,8 +84,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/simulation', [SimulationController::class, 'index'])
         ->name('simulation.index');
 
-    Route::post('/simulation/run/mitm', [SimulationController::class, 'runMitm'])
-        ->name('mitm.run');
+    // Route::post('/simulation/run/mitm', [SimulationController::class, 'runMitm'])
+    //     ->name('mitm.run');
 
     Route::post('/simulation/run/ddos', [SimulationController::class, 'runDdos'])
     ->name('ddos.run');
@@ -98,6 +98,10 @@ Route::middleware(['auth'])->group(function () {
         ->name('simulation.result');
 
 });
+
+Route::post('/simulation/mitm/run', [SimulationController::class, 'runMitm'])
+    ->name('mitm.run')
+    ->middleware(['auth', 'verified']);
 
 Route::prefix('simulations')->middleware('auth')->group(function() {
     Route::get('/reports', [SimulationController::class, 'reports'])->name('simulation.reports');

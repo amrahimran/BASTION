@@ -1,0 +1,2 @@
+# Python simulation dependencies
+# No special packages needed for safe simulation

@@ -6,115 +6,92 @@ use Illuminate\Support\Facades\Http;
 
 class AiExplanationService
 {
-//     public function generateMitmExplanation(array $data): string
-//     {
-//         $prompt = "
-// Explain the following Man-in-the-Middle (MITM) simulation result
-// to NON-TECHNICAL office staff.
-
-// Simulation Details:
-// - Intercepted network traffic: {$data['intercepted_packets']}
-// - Credentials exposed: {$data['exposed_credentials']}
-// - Risk level: {$data['risk_level']}
-
-// Explain clearly using:
-// - Short paragraphs
-// - HTML-friendly bullet points <ul><li>
-// - Highlight key items using <strong>
-// - Avoid technical jargon
-
-// Content should be easy to read for non-technical users.
-// ";
-
-//         $response = Http::post(
-//             'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key='
-//             . config('services.gemini.key'),
-//             [
-//                 'contents' => [
-//                     [
-//                         'parts' => [
-//                             ['text' => $prompt]
-//                         ]
-//                     ]
-//                 ]
-//             ]
-//         );
-
-//         return $response->json('candidates.0.content.parts.0.text')
-//             ?? 'AI explanation could not be generated.';
-//     }
-
-   
-public function generateMitmExplanation(array $data): string
-{
-    $prompt = "
-Audience: Non-technical staff.
-
-Explain a Man-in-the-Middle attack simulation.
-
-Results:
-Devices detected on the network: {$data['detected_devices']}
-Data packets observed: {$data['intercepted_packets']}
-Login details exposed: {$data['exposed_credentials']}
-Risk level: {$data['risk_level']}
-
-Explain:
-- What MITM means
-- Why data can be seen
-- Why encryption matters
-- How staff reduce risk
-
-Use short paragraphs.
-Plain English.
-No bullet points.
-No headings.
-";
-
-    $response = Http::post(
-        'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key='
-        . config('services.gemini.key'),
-        [
-            'contents' => [[
-                'parts' => [['text' => $prompt]]
-            ]]
-        ]
-    );
-
-    return trim(
-        $response->json('candidates.0.content.parts.0.text')
-        ?? 'Explanation unavailable.'
-    );
-}
-
-public function generateDdosExplanation(array $data): string
+    public function generateMitmExplanation(array $data): string
     {
         $prompt = "
-Explain the following Distributed Denial-of-Service (DDoS) simulation
-to NON-TECHNICAL office staff.
+        AUDIENCE: Non-technical office staff who use computers but aren't IT experts.
 
-Simulation Details:
-- Attack strength: {$data['mode']}
-- Target system: {$data['target']}
-- Requests per second: {$data['request_rate']}
-- Total requests sent: {$data['total_requests']}
-- Risk level: {$data['risk_level']}
+        Explain a Man-in-the-Middle attack simulation in PLAIN ENGLISH.
 
-Please format the output with:
-- Short, easy-to-read paragraphs
-- Bullet points using HTML <ul><li>
-- Highlight important terms with <strong>
-- Use color tags if helpful: e.g., <span style='color:#ff4d4d'>High Risk</span>
-- Do NOT include markdown symbols like # or **
+        SIMULATION RESULTS:
+        - Devices on network: {$data['detected_devices']}
+        - Data packets that could be seen: {$data['intercepted_packets']}
+        - Login details that could be exposed: {$data['exposed_credentials']}
+        - Risk level: {$data['risk_level']}
 
-Explain:
-1. What a DDoS attack is in simple terms
-2. What happened in this simulation
-3. Why downtime is dangerous
-4. How this affects employees and customers
-5. Basic prevention ideas (firewalls, rate limiting, monitoring)
+        IMPORTANT FORMAT RULES:
+        1. Use PLAIN TEXT ONLY - NO HTML TAGS AT ALL
+        2. NO <strong>, NO <p>, NO <br>, NO <ul>, NO <li>
+        3. NO markdown symbols like *, #, -, >
+        4. Use double line breaks between paragraphs
+        5. Use normal sentences with periods
+        6. NO bullet points, NO numbered lists
+        7. NO section headings or titles
+        8. If you need emphasis, just use capital letters or say 'important'
 
-Make the explanation clean, educational, and visually scannable.
-";
+        EXPLAIN:
+        - What is happening in simple terms
+        - Why this matters for office workers
+        - What staff should look out for
+        - How to stay safe
+        - Why this simulation was run
+
+        Make it friendly, conversational, and helpful.
+        OUTPUT MUST BE PLAIN TEXT WITH NO FORMATTING.
+        ";
+
+        $response = Http::post(
+            'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key='
+            . config('services.gemini.key'),
+            [
+                'contents' => [[
+                    'parts' => [['text' => $prompt]]
+                ]]
+            ]
+        );
+
+        $text = trim(
+            $response->json('candidates.0.content.parts.0.text')
+            ?? 'This simulation shows how data can be intercepted on unsecured networks. It helps us understand security risks that could affect our company.'
+        );
+
+        // CLEAN UP ANY REMAINING HTML/MARKDOWN
+        return $this->cleanText($text);
+    }
+
+    public function generateDdosExplanation(array $data): string
+    {
+        $prompt = "
+        AUDIENCE: Non-technical office staff. They know websites can be slow but don't know why.
+
+        Explain a DDoS attack simulation in SIMPLE TERMS.
+
+        SIMULATION RESULTS:
+        - Attack type: {$data['mode']}
+        - Target: {$data['target']}
+        - Requests per second: {$data['request_rate']}
+        - Total fake requests: {$data['total_requests']}
+        - Risk level: {$data['risk_level']}
+
+        IMPORTANT FORMAT RULES:
+        1. Use PLAIN TEXT ONLY - NO HTML TAGS AT ALL
+        2. NO <strong>, NO <p>, NO <br>, NO <ul>, NO <li>
+        3. NO markdown symbols like *, #, -, >
+        4. Use double line breaks between paragraphs
+        5. Use normal sentences with periods
+        6. NO bullet points, NO numbered lists
+        7. NO section headings or titles
+
+        EXPLAIN:
+        - What a DDoS attack is (simple analogy)
+        - What happens to websites/services during attack
+        - How this affects staff work
+        - How this affects customers
+        - Why we run these simulations
+
+        Make it practical and relatable to daily work.
+        OUTPUT MUST BE PLAIN TEXT WITH NO FORMATTING.
+        ";
 
         $response = Http::post(
             'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key='
@@ -130,176 +107,157 @@ Make the explanation clean, educational, and visually scannable.
             ]
         );
 
-        return $response->json('candidates.0.content.parts.0.text')
-            ?? 'AI explanation could not be generated.';
+        $text = $response->json('candidates.0.content.parts.0.text')
+            ?? 'This simulation shows what happens when too many fake requests overwhelm our systems. Websites become slow or unavailable, affecting both staff and customers.';
+
+        // CLEAN UP ANY REMAINING HTML/MARKDOWN
+        return $this->cleanText($text);
     }
 
     public function generatePhishingExplanation(array $data): string
-{
-    $prompt = "
-You are writing content that will be shown directly on a website.
+    {
+        $prompt = "
+        AUDIENCE: Office staff who receive emails daily. They're not security experts.
 
-IMPORTANT RULES:
-- DO NOT use markdown
-- DO NOT use ###, ---, *, or bullet symbols
-- DO NOT bold using ** **
-- Use short paragraphs
-- Leave a blank line between sections
-- Write in plain English only
+        Explain a phishing email simulation in EVERYDAY LANGUAGE.
 
-Audience: Non-technical office staff
+        SIMULATION FACTS:
+        - Email theme: {$data['theme']}
+        - Target group: {$data['target']}
+        - Fake emails sent: {$data['emails_sent']}
+        - Staff who clicked links: {$data['clicked_links']}
+        - Staff who entered fake details: {$data['entered_details']}
+        - Risk level: {$data['risk_level']}
 
-Title: Phishing Awareness Simulation Result
+        IMPORTANT FORMAT RULES:
+        1. Use PLAIN TEXT ONLY - NO HTML TAGS AT ALL
+        2. NO <strong>, NO <p>, NO <br>, NO <ul>, NO <li>
+        3. NO markdown symbols like *, #, -, >
+        4. Use double line breaks between paragraphs
+        5. Use normal sentences with periods
+        6. NO bullet points, NO numbered lists
+        7. NO section headings or titles
 
-Explain clearly using this structure.
+        EXPLAIN:
+        - What phishing emails look like
+        - Why people sometimes click them
+        - What happens if someone enters details
+        - How this affects the company
+        - What to do if you see a suspicious email
+        - Why we run these tests
 
-Each section MUST be no more than 3 short sentences.
-Do NOT repeat ideas.
-Do NOT explain cybersecurity theory.
-Focus only on what THIS simulation shows.
-
-
-SECTION TITLE: What is a phishing email?
-Explain in 2–3 simple sentences.
-
-SECTION TITLE: What happened in this simulation?
-Include these facts naturally:
-Theme: {$data['theme']}
-Target group: {$data['target']}
-Emails sent: {$data['emails_sent']}
-Users who clicked links: {$data['clicked_links']}
-Users who entered fake login details: {$data['entered_details']}
-Risk level: {$data['risk_level']}
-
-SECTION TITLE: Why this is dangerous
-Explain impact on staff and company in simple terms.
-
-SECTION TITLE: How to stay safe
-Give 4–5 very simple tips.
-
-No emojis.
-No lists.
-No technical jargon.
-
-End the response with ONE short sentence summarizing the overall risk.
-
-";
-
-    $response = Http::post(
-        'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key='
-        . config('services.gemini.key'),
-        [
-            'contents' => [
-                [
-                    'parts' => [
-                        ['text' => $prompt]
-                    ]
-                ]
-            ]
-        ]
-    );
-
-    return $response->json('candidates.0.content.parts.0.text')
-        ?? 'AI explanation could not be generated.';
-}
-
-public function generateSniffingExplanation(array $data): string
-{
-    $prompt = "
-        Audience: Non-technical office staff
-
-        You are explaining the result of a Passive Network Sniffing security simulation.
-        This is an awareness exercise, not a real attack.
-
-        Rules:
-        Use plain English only.
-        Keep sentences short.
-        No technical jargon.
-        No bullet points.
-        No markdown.
-        Add a blank line between each section.
-        Do not mention instructions or rules.
-
-        Write the response using EXACTLY the following format and headings.
-
-        What happened in this simulation?
-        Passive sniffing means quietly listening to network traffic.
-        It is like overhearing conversations in a public place.
-        No systems were hacked or broken into.
-
-        What information could be seen?
-        Unencrypted services detected: {$data['unencrypted_services']}
-        Visible network sessions: {$data['exposed_sessions']}
-        Login details potentially visible: {$data['credentials_visible']}
-
-        Why is this a risk?
-        Seeing this information can expose private company data.
-        It can damage trust with staff and customers.
-        Sensitive business information could be misused.
-
-        How does encryption help?
-        Encryption protects information by scrambling it.
-        Even if someone listens, they cannot understand it.
-        Only the intended receiver can read the data.
-
-        What should the company do?
-        Secure all Wi-Fi networks.
-        Enforce HTTPS on all systems.
-        Use VPNs for remote access.
-        Improve staff awareness.
-
-        Overall risk level: {$data['risk_level']}
+        Make it feel like helpful advice from a colleague, not a technical lecture.
+        OUTPUT MUST BE PLAIN TEXT WITH NO FORMATTING.
         ";
 
-
-   try {
-    $response = Http::timeout(20)->post(
-        'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key='
-        . config('services.gemini.key'),
-        [
-            'contents' => [
-                [
-                    'parts' => [
-                        ['text' => $prompt]
+        $response = Http::post(
+            'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key='
+            . config('services.gemini.key'),
+            [
+                'contents' => [
+                    [
+                        'parts' => [
+                            ['text' => $prompt]
+                        ]
                     ]
                 ]
             ]
-        ]
-    );
+        );
 
-    if ($response->failed()) {
-        throw new \Exception('AI request failed');
+        $text = $response->json('candidates.0.content.parts.0.text')
+            ?? 'This simulation tests how well staff can spot fake emails. Phishing emails try to trick people into clicking links or entering login details. Even a few clicks can put company information at risk.';
+
+        // CLEAN UP ANY REMAINING HTML/MARKDOWN
+        return $this->cleanText($text);
     }
 
-    return $response->json()['candidates'][0]['content']['parts'][0]['text']
-        ?? 'Simulation completed. AI explanation is currently unavailable.';
+    public function generateSniffingExplanation(array $data): string
+    {
+        $prompt = "
+        AUDIENCE: Office staff who use Wi-Fi and company networks daily.
 
-} catch (\Exception $e) {
+        Explain a passive network sniffing simulation in SIMPLE TERMS.
 
-    // ✅ FALLBACK – app continues normally
-    return "
-Security Explanation
+        SIMULATION RESULTS:
+        - Unsecured services: {$data['unencrypted_services']}
+        - Visible network sessions: {$data['exposed_sessions']}
+        - Login details potentially visible: {$data['credentials_visible']}
+        - Risk level: {$data['risk_level']}
 
-What happened in this simulation?
-Passive sniffing means quietly observing network traffic without interfering.
+        IMPORTANT FORMAT RULES:
+        1. Use PLAIN TEXT ONLY - NO HTML TAGS AT ALL
+        2. NO <strong>, NO <p>, NO <br>, NO <ul>, NO <li>
+        3. NO markdown symbols like *, #, -, >
+        4. Use double line breaks between paragraphs
+        5. Use normal sentences with periods
+        6. NO bullet points, NO numbered lists
+        7. NO section headings or titles
 
-What information could be exposed?
-Unencrypted data, visible sessions, and login details.
+        EXPLAIN:
+        - What 'passive sniffing' means in simple terms
+        - What kinds of information might be visible
+        - Why this matters for company privacy
+        - How to make information more private
+        - Why we run these simulations
 
-Why is this a risk?
-Sensitive company information could be viewed or misused.
+        Make it clear, practical, and focused on protecting company information.
+        OUTPUT MUST BE PLAIN TEXT WITH NO FORMATTING.
+        ";
 
-How does encryption help?
-Encryption ensures intercepted data cannot be understood.
+        try {
+            $response = Http::timeout(20)->post(
+                'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key='
+                . config('services.gemini.key'),
+                [
+                    'contents' => [
+                        [
+                            'parts' => [
+                                ['text' => $prompt]
+                            ]
+                        ]
+                    ]
+                ]
+            );
 
-What should the company do?
-Use HTTPS, secure Wi-Fi, apply VPNs, and train staff.
+            if ($response->failed()) {
+                throw new \Exception('AI request failed');
+            }
 
-Overall risk level: {$data['risk_level']}
-";
-}
+            $text = $response->json()['candidates'][0]['content']['parts'][0]['text']
+                ?? 'This simulation shows what information might be visible on unsecured networks. Like overhearing conversations, some network data can be seen by others if not properly protected.';
 
-}
+            // CLEAN UP ANY REMAINING HTML/MARKDOWN
+            return $this->cleanText($text);
 
+        } catch (\Exception $e) {
+            return "This security simulation shows what information might be visible on company networks when not properly secured. It helps us understand what data needs extra protection to keep company information private.";
+        }
+    }
 
+    /**
+     * Clean text by removing all HTML tags and markdown formatting
+     */
+    private function cleanText(string $text): string
+    {
+        // Remove ALL HTML tags
+        $text = strip_tags($text);
+        
+        // Remove markdown symbols
+        $text = str_replace(['*', '#', '**', '__', '~~', '`'], '', $text);
+        
+        // Remove markdown list symbols
+        $text = preg_replace('/^\s*[-*+]\s+/m', '', $text);
+        $text = preg_replace('/^\s*\d+\.\s+/m', '', $text);
+        
+        // Remove angle brackets (sometimes AI uses <like this> for emphasis)
+        $text = preg_replace('/<[^>]+>/', '', $text);
+        
+        // Remove excessive line breaks
+        $text = preg_replace('/\n\s*\n\s*\n+/', "\n\n", $text);
+        
+        // Trim whitespace
+        $text = trim($text);
+        
+        return $text;
+    }
 }
