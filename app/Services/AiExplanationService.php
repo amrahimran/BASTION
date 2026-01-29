@@ -28,6 +28,7 @@ class AiExplanationService
         6. NO bullet points, NO numbered lists
         7. NO section headings or titles
         8. If you need emphasis, just use capital letters or say 'important'
+        9. DATA PRECISION: Use the EXACT numerical values provided in the SIMULATION RESULTS. Do NOT use words like 'about', 'around', 'approximately', or 'roughly'.
 
         EXPLAIN:
         - What is happening in simple terms
@@ -55,7 +56,6 @@ class AiExplanationService
             ?? 'This simulation shows how data can be intercepted on unsecured networks. It helps us understand security risks that could affect our company.'
         );
 
-        // CLEAN UP ANY REMAINING HTML/MARKDOWN
         return $this->cleanText($text);
     }
 
@@ -64,7 +64,7 @@ class AiExplanationService
         $prompt = "
         AUDIENCE: Non-technical office staff. They know websites can be slow but don't know why.
 
-        Explain a DDoS attack simulation in SIMPLE TERMS.
+        Explain a DoS attack simulation in SIMPLE TERMS.
 
         SIMULATION RESULTS:
         - Attack type: {$data['mode']}
@@ -81,9 +81,10 @@ class AiExplanationService
         5. Use normal sentences with periods
         6. NO bullet points, NO numbered lists
         7. NO section headings or titles
+        8. DATA PRECISION: You must use the EXACT numbers provided. Do NOT say 'roughly' or 'nearly'. If the rate is {$data['request_rate']}, use that exact number.
 
         EXPLAIN:
-        - What a DDoS attack is (simple analogy)
+        - What a DoS attack is (simple analogy)
         - What happens to websites/services during attack
         - How this affects staff work
         - How this affects customers
@@ -97,20 +98,15 @@ class AiExplanationService
             'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key='
             . config('services.gemini.key'),
             [
-                'contents' => [
-                    [
-                        'parts' => [
-                            ['text' => $prompt]
-                        ]
-                    ]
-                ]
+                'contents' => [[
+                    'parts' => [['text' => $prompt]]
+                ]]
             ]
         );
 
         $text = $response->json('candidates.0.content.parts.0.text')
             ?? 'This simulation shows what happens when too many fake requests overwhelm our systems. Websites become slow or unavailable, affecting both staff and customers.';
 
-        // CLEAN UP ANY REMAINING HTML/MARKDOWN
         return $this->cleanText($text);
     }
 
@@ -137,6 +133,7 @@ class AiExplanationService
         5. Use normal sentences with periods
         6. NO bullet points, NO numbered lists
         7. NO section headings or titles
+        8. DATA PRECISION: Use the EXACT count for emails, clicks, and details entered. Do NOT round numbers or use words like 'approximately'.
 
         EXPLAIN:
         - What phishing emails look like
@@ -154,20 +151,15 @@ class AiExplanationService
             'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key='
             . config('services.gemini.key'),
             [
-                'contents' => [
-                    [
-                        'parts' => [
-                            ['text' => $prompt]
-                        ]
-                    ]
-                ]
+                'contents' => [[
+                    'parts' => [['text' => $prompt]]
+                ]]
             ]
         );
 
         $text = $response->json('candidates.0.content.parts.0.text')
             ?? 'This simulation tests how well staff can spot fake emails. Phishing emails try to trick people into clicking links or entering login details. Even a few clicks can put company information at risk.';
 
-        // CLEAN UP ANY REMAINING HTML/MARKDOWN
         return $this->cleanText($text);
     }
 
@@ -192,6 +184,7 @@ class AiExplanationService
         5. Use normal sentences with periods
         6. NO bullet points, NO numbered lists
         7. NO section headings or titles
+        8. DATA PRECISION: Be exact with the metrics provided. Do NOT use words like 'around' or 'about' when referring to the number of visible sessions or services.
 
         EXPLAIN:
         - What 'passive sniffing' means in simple terms
@@ -209,13 +202,9 @@ class AiExplanationService
                 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key='
                 . config('services.gemini.key'),
                 [
-                    'contents' => [
-                        [
-                            'parts' => [
-                                ['text' => $prompt]
-                            ]
-                        ]
-                    ]
+                    'contents' => [[
+                        'parts' => [['text' => $prompt]]
+                    ]]
                 ]
             );
 
@@ -226,7 +215,6 @@ class AiExplanationService
             $text = $response->json()['candidates'][0]['content']['parts'][0]['text']
                 ?? 'This simulation shows what information might be visible on unsecured networks. Like overhearing conversations, some network data can be seen by others if not properly protected.';
 
-            // CLEAN UP ANY REMAINING HTML/MARKDOWN
             return $this->cleanText($text);
 
         } catch (\Exception $e) {
@@ -234,30 +222,50 @@ class AiExplanationService
         }
     }
 
-    /**
-     * Clean text by removing all HTML tags and markdown formatting
-     */
     private function cleanText(string $text): string
     {
-        // Remove ALL HTML tags
         $text = strip_tags($text);
-        
-        // Remove markdown symbols
         $text = str_replace(['*', '#', '**', '__', '~~', '`'], '', $text);
-        
-        // Remove markdown list symbols
         $text = preg_replace('/^\s*[-*+]\s+/m', '', $text);
         $text = preg_replace('/^\s*\d+\.\s+/m', '', $text);
-        
-        // Remove angle brackets (sometimes AI uses <like this> for emphasis)
         $text = preg_replace('/<[^>]+>/', '', $text);
-        
-        // Remove excessive line breaks
         $text = preg_replace('/\n\s*\n\s*\n+/', "\n\n", $text);
-        
-        // Trim whitespace
         $text = trim($text);
         
         return $text;
+    }
+
+    public function generateQuickSummary(array $data): string
+    {
+        $prompt = "
+        Audience: Non-technical office staff
+        Create 4 very short bullet points summarising this security simulation.
+
+        Simulation type: {$data['type']}
+        Risk level: {$data['risk_level']}
+        Simulation details: {$data['details']}
+
+        Rules:
+        - Exactly 4 bullet points
+        - Very short and clear
+        - Explain what happened and what to be concerned about
+        - Plain English
+        - No technical jargon
+        - No markdown
+        - PRECISION: Use exact numbers from the details; do not round them.
+        ";
+
+        $response = Http::post(
+            'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key='
+            . config('services.gemini.key'),
+            [
+                'contents' => [[
+                    'parts' => [['text' => $prompt]]
+                ]]
+            ]
+        );
+
+        return $response->json('candidates.0.content.parts.0.text')
+            ?? "- Simulation completed\n- Review recommended\n- Follow security best practices\n- Contact IT if unsure";
     }
 }
